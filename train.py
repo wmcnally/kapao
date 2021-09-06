@@ -105,10 +105,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
 
     kp_flip = data_dict['kp_flip'] if 'kp_flip' in data_dict.keys() else None
-    if kp_flip:
-        num_coords = len(kp_flip) * 2
-    else:
-        num_coords = 0
+    num_coords = data_dict['num_coords'] if 'num_coords' in data_dict.keys() else 0
 
     # Model
     pretrained = weights.endswith('.pt')
@@ -479,7 +476,7 @@ def main(opt):
     set_logging(RANK)
     if RANK in [-1, 0]:
         print(colorstr('train: ') + ', '.join(f'{k}={v}' for k, v in vars(opt).items()))
-        check_git_status()
+        # check_git_status()
         check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume

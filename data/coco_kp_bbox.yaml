@@ -7,8 +7,8 @@ val: train2017_debug.txt
 # number of classes
 nc: 18
 
-# number of keypoint coordinates (x, y)
-num_coords: 34
+# number of keypoint coordinates (x, y) for person object
+num_coords: 0
 
 # class names
 names: [ 'person', 'nose',

@@ -609,7 +609,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if nl:
                     labels[:, 1] = 1 - labels[:, 1]
 
-                    if self.kp_flip:
+                    if self.kp_flip and labels.shape[1] > 5:
                         labels[:, 5::3] = 1 - labels[:, 5::3]  # flip keypoints in person object
                         keypoints = labels[:, 5:].reshape(nl, -1, 3)
                         keypoints = keypoints[:, self.kp_flip]  # reorder left / right keypoints
