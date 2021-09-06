@@ -90,7 +90,7 @@ class QFocalLoss(nn.Module):
 
 class ComputeLoss:
     # Compute losses
-    def __init__(self, model, autobalance=False):
+    def __init__(self, model, autobalance=False, num_coords=0):
         super(ComputeLoss, self).__init__()
         self.sort_obj_iou = False
         device = next(model.parameters()).device  # get model device
@@ -112,13 +112,22 @@ class ComputeLoss:
         self.balance = {3: [4.0, 1.0, 0.4]}.get(det.nl, [4.0, 1.0, 0.25, 0.06, .02])  # P3-P7
         self.ssi = list(det.stride).index(16) if autobalance else 0  # stride 16 index
         self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, 1.0, h, autobalance
-        for k in 'na', 'nc', 'nl', 'anchors':
-            setattr(self, k, getattr(det, k))
+
+        # for k in 'na', 'nc', 'nl', 'anchors':
+        #     setattr(self, k, getattr(det, k))
+        self.num_coords = num_coords
+        self.na = det.na
+        self.nc = det.nc
+        self.nl = det.nl
+        self.anchors = det.anchors
 
     def __call__(self, p, targets):  # predictions, targets, model
         device = targets.device
-        lcls, lbox, lobj = torch.zeros(1, device=device), torch.zeros(1, device=device), torch.zeros(1, device=device)
-        tcls, tbox, indices, anchors = self.build_targets(p, targets)  # targets
+        lcls = torch.zeros(1, device=device)
+        lbox = torch.zeros(1, device=device)
+        lobj = torch.zeros(1, device=device)
+        lkps = torch.zeros(1, device=device)  # keypoint loss
+        tcls, tbox, tkps, indices, anchors = self.build_targets(p, targets)  # targets
 
         # Losses
         for i, pi in enumerate(p):  # layer index, layer predictions
@@ -131,10 +140,21 @@ class ComputeLoss:
 
                 # Regression
                 pxy = ps[:, :2].sigmoid() * 2. - 0.5
-                pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]
+                pwh = (ps[:, 2:4].sigmoid() * 2) ** 2 * anchors[i]  # range [0, 4] * anchor
                 pbox = torch.cat((pxy, pwh), 1)  # predicted box
                 iou = bbox_iou(pbox.T, tbox[i], x1y1x2y2=False, CIoU=True)  # iou(prediction, target)
                 lbox += (1.0 - iou).mean()  # iou loss
+
+                # Keypoints
+                if self.num_coords:
+                    tkp = tkps[i]
+                    pkp = ps[:, 5 + self.nc:].reshape((-1, self.num_coords // 2, 2))
+                    pkp = (pkp.sigmoid() * 4. - 2.) * anchors[i][:, None, :]  # range [-2, 2] * anchor
+                    vis = tkp[..., 2] > 0
+                    pkp_vis = pkp[vis]
+                    tkp_vis = tkp[vis]
+                    l2 = torch.linalg.norm(pkp_vis - tkp_vis[..., :2], dim=-1)
+                    lkps += torch.mean(l2)
 
                 # Objectness
                 score_iou = iou.detach().clamp(0).type(tobj.dtype)
@@ -163,15 +183,16 @@ class ComputeLoss:
         lbox *= self.hyp['box']
         lobj *= self.hyp['obj']
         lcls *= self.hyp['cls']
+        lkps *= self.hyp['kp']
         bs = tobj.shape[0]  # batch size
 
-        return (lbox + lobj + lcls) * bs, torch.cat((lbox, lobj, lcls)).detach()
+        return (lbox + lobj + lcls + lkps) * bs, torch.cat((lbox, lobj, lcls, lkps)).detach()
 
     def build_targets(self, p, targets):
-        # Build targets for compute_loss(), input targets(image,class,x,y,w,h)
+        # Build targets for compute_loss(), input targets(image,class,x,y,w,h, x1,y1,v1, ..., x17,y17,v17)
         na, nt = self.na, targets.shape[0]  # number of anchors, targets
-        tcls, tbox, indices, anch = [], [], [], []
-        gain = torch.ones(7, device=targets.device)  # normalized to gridspace gain
+        tcls, tbox, tkps, indices, anch = [], [], [], [], []
+        gain = torch.ones(7 + self.num_coords * 3 // 2, device=targets.device)  # normalized to gridspace gain
         ai = torch.arange(na, device=targets.device).float().view(na, 1).repeat(1, nt)  # same as .repeat_interleave(nt)
         targets = torch.cat((targets.repeat(na, 1, 1), ai[:, :, None]), 2)  # append anchor indices
 
@@ -183,7 +204,12 @@ class ComputeLoss:
 
         for i in range(self.nl):
             anchors = self.anchors[i]
-            gain[2:6] = torch.tensor(p[i].shape)[[3, 2, 3, 2]]  # xyxy gain
+            xy_gain = torch.tensor(p[i].shape)[[3, 2]]
+            gain[2:4] = xy_gain
+            gain[4:6] = xy_gain
+            for j in range(self.num_coords // 2):
+                kp_idx = 6 + j * 3
+                gain[kp_idx:kp_idx + 2] = xy_gain
 
             # Match targets to anchors
             t = targets * gain
@@ -207,17 +233,23 @@ class ComputeLoss:
                 offsets = 0
 
             # Define
-            b, c = t[:, :2].long().T  # image, class
+            b = t[:, 0].long()  # image
+            c = t[:, 1].long()  # class
             gxy = t[:, 2:4]  # grid xy
             gwh = t[:, 4:6]  # grid wh
             gij = (gxy - offsets).long()
             gi, gj = gij.T  # grid xy indices
 
+            if self.num_coords:
+                kp = t[:, 6:-1].reshape(-1, self.num_coords // 2, 3)
+                kp[..., :2] -= gij[:, None, :]  # grid kp relative to grid box anchor
+                tkps.append(kp)
+
             # Append
-            a = t[:, 6].long()  # anchor indices
+            a = t[:, -1].long()  # anchor indices
             indices.append((b, a, gj.clamp_(0, gain[3] - 1), gi.clamp_(0, gain[2] - 1)))  # image, anchor, grid indices
             tbox.append(torch.cat((gxy - gij, gwh), 1))  # box
             anch.append(anchors[a])  # anchors
             tcls.append(c)  # class
 
-        return tcls, tbox, indices, anch
+        return tcls, tbox, tkps, indices, anch

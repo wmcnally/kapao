@@ -119,7 +119,7 @@ def letterbox(im, new_shape=(640, 640), color=(114, 114, 114), auto=True, scaleF
 
 
 def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, scale=.1, shear=10, perspective=0.0,
-                       border=(0, 0)):
+                       border=(0, 0), kp_bbox=None):
     # torchvision.transforms.RandomAffine(degrees=(-10, 10), translate=(.1, .1), scale=(.9, 1.1), shear=(-10, 10))
     # targets = [cls, xyxy]
 
@@ -203,6 +203,48 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
         i = box_candidates(box1=targets[:, 1:5].T * s, box2=new.T, area_thr=0.01 if use_segments else 0.10)
         targets = targets[i]
         targets[:, 1:5] = new[i]
+
+        n = len(targets)
+        if n:
+            # warp keypoints in person object
+            person_mask = targets[:, 0] == 0
+            person_targets = targets[person_mask]
+            if len(person_targets) > 0:
+                xy = person_targets[:, 5:].reshape(-1, 3)
+                vis = xy[:, 2:].copy()
+                xy[:, 2:] = 1
+                xy = xy @ M.T  # transform
+                xy = (xy[:, :2] / xy[:, 2:3] if perspective else xy[:, :2])  # perspective rescale or affine
+                out_mask = (
+                        (xy[:, 0] < 0) |
+                        (xy[:, 1] < 0) |
+                        (xy[:, 0] > width) |
+                        (xy[:, 1] > height)
+                )
+                vis[out_mask] = 0
+                keypoints = np.concatenate((xy, vis), axis=-1)
+                targets[person_mask, 5:] = keypoints.reshape(person_targets.shape[0], -1)
+
+            # resize keypoint bbox sizes back to original
+            if kp_bbox:
+                for i in range(int(targets[:, 0].max()) + 1):
+                    if i > 0:
+                        kp_mask = targets[:, 0] == i
+                        kp_targets = targets[kp_mask]
+
+                        xc = kp_targets[:, [1, 3]].mean(axis=-1)
+                        yc = kp_targets[:, [2, 4]].mean(axis=-1)
+
+                        kp_targets[:, 1] = xc - (kp_bbox * width) / 2
+                        kp_targets[:, 2] = yc - (kp_bbox * height) / 2
+                        kp_targets[:, 3] = xc + (kp_bbox * width) / 2
+                        kp_targets[:, 4] = yc + (kp_bbox * height) / 2
+
+                        targets[kp_mask] = kp_targets
+
+                    # clip
+                    targets[:, [1, 3]] = targets[:, [1, 3]].clip(0, width)
+                    targets[:, [2, 4]] = targets[:, [2, 4]].clip(0, height)
 
     return im, targets
 

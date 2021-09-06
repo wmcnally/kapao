@@ -452,6 +452,17 @@ def xywhn2xyxy(x, w=640, h=640, padw=0, padh=0):
     y[:, 1] = h * (x[:, 1] - x[:, 3] / 2) + padh  # top left y
     y[:, 2] = w * (x[:, 0] + x[:, 2] / 2) + padw  # bottom right x
     y[:, 3] = h * (x[:, 1] + x[:, 3] / 2) + padh  # bottom right y
+
+    # Convert keypoints from [x, y, v] normalized to [x, y]
+    if y.shape[-1] > 4:
+        nl = y.shape[0]
+        kp = y[:, 4:].reshape(nl, -1, 3)
+        kp[..., 0] *= w
+        kp[..., 0] += padw
+        kp[..., 1] *= h
+        kp[..., 1] += padh
+        y[:, 4:] = kp.reshape(nl, -1)
+
     return y
 
 
@@ -464,6 +475,15 @@ def xyxy2xywhn(x, w=640, h=640, clip=False, eps=0.0):
     y[:, 1] = ((x[:, 1] + x[:, 3]) / 2) / h  # y center
     y[:, 2] = (x[:, 2] - x[:, 0]) / w  # width
     y[:, 3] = (x[:, 3] - x[:, 1]) / h  # height
+
+    # convert keypoints from [x, y, v] to [x, y, v] normalized
+    if y.shape[-1] > 4:
+        nl = y.shape[0]
+        kp = y[:, 4:].reshape(nl, -1, 3)
+        kp[..., 0] /= w
+        kp[..., 1] /= h
+        y[:, 4:] = kp.reshape(nl, -1)
+
     return y
 
 

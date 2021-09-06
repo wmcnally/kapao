@@ -36,6 +36,8 @@ IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']
 VID_FORMATS = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 NUM_THREADS = min(8, os.cpu_count())  # number of multiprocessing threads
 
+COCO_KP_LEFT = [1, 3, 5, 7, 9, 11, 13, 15]
+
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
     if ExifTags.TAGS[orientation] == 'Orientation':
@@ -92,7 +94,8 @@ def exif_transpose(image):
 
 
 def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
-                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix=''):
+                      rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='',
+                      kp_flip=None):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
         dataset = LoadImagesAndLabels(path, imgsz, batch_size,
@@ -104,7 +107,13 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       stride=int(stride),
                                       pad=pad,
                                       image_weights=image_weights,
-                                      prefix=prefix)
+                                      prefix=prefix,
+                                      kp_flip=kp_flip)
+
+        # for i in range(10):
+        #     dataset.__getitem__(i)
+        # import sys
+        # sys.exit()
 
     batch_size = min(batch_size, len(dataset))
     nw = min([os.cpu_count(), batch_size if batch_size > 1 else 0, workers])  # number of workers
@@ -366,7 +375,8 @@ def img2label_paths(img_paths):
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
     def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
-                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix=''):
+                 cache_images=False, single_cls=False, stride=32, pad=0.0, prefix='',
+                 kp_flip=None):
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -377,6 +387,14 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.stride = stride
         self.path = path
         self.albumentations = Albumentations() if augment else None
+        self.kp_flip = kp_flip
+
+        if self.kp_flip:
+            self.obj_flip = {0: 0}
+            for i in range(len(self.kp_flip)):
+                self.obj_flip[i + 1] = self.kp_flip[i] + 1
+        else:
+            self.obj_flip = None
 
         try:
             f = []  # image files
@@ -530,10 +548,15 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
+        if 'kp_bbox' in hyp:
+            kp_bbox = hyp['kp_bbox']
+        else:
+            kp_bbox = None
+
         mosaic = self.mosaic and random.random() < hyp['mosaic']
         if mosaic:
             # Load mosaic
-            img, labels = load_mosaic(self, index)
+            img, labels = load_mosaic(self, index, kp_bbox=kp_bbox)
             shapes = None
 
             # MixUp augmentation
@@ -559,11 +582,12 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                                                  translate=hyp['translate'],
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
-                                                 perspective=hyp['perspective'])
+                                                 perspective=hyp['perspective'],
+                                                 kp_bbox=kp_bbox)
 
         nl = len(labels)  # number of labels
         if nl:
-            labels[:, 1:5] = xyxy2xywhn(labels[:, 1:5], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3)
+            labels[:, 1:] = xyxy2xywhn(labels[:, 1:], w=img.shape[1], h=img.shape[0], clip=True, eps=1E-3)
 
         if self.augment:
             # Albumentations
@@ -585,13 +609,48 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                 if nl:
                     labels[:, 1] = 1 - labels[:, 1]
 
+                    if self.kp_flip:
+                        labels[:, 5::3] = 1 - labels[:, 5::3]  # flip keypoints in person object
+                        keypoints = labels[:, 5:].reshape(nl, -1, 3)
+                        keypoints = keypoints[:, self.kp_flip]  # reorder left / right keypoints
+                        labels[:, 5:] = keypoints.reshape(nl, -1)
+
+                    if self.obj_flip:
+                        for i, cls in enumerate(labels[:, 0]):
+                            labels[i, 0] = self.obj_flip[labels[i, 0]]
+
             # Cutouts
             # labels = cutout(img, labels, p=0.5)
 
-        labels_out = torch.zeros((nl, 6))
+        # img_h, img_w = img.shape[:2]
+        # img = img.copy()
+        # person_obj = labels[labels[:, 0] == 0]
+        # for lbl in person_obj:
+        #     xc, yc, w, h = lbl[1:5].copy()
+        #     pt1 = (int((xc - w / 2) * img_w), int((yc - h / 2) * img_h))
+        #     pt2 = (int((xc + w / 2) * img_w), int((yc + h / 2) * img_h))
+        #     cv2.rectangle(img, pt1, pt2, (255, 0, 255), thickness=2)
+        #
+        #     kp = lbl[5:]
+        #     kp = np.array(kp).reshape(-1, 3)
+        #     kp[:, 0] = kp[:, 0] * img_w
+        #     kp[:, 1] = kp[:, 1] * img_h
+        #     for i, (x, y, v) in enumerate(kp):
+        #         if v:
+        #             if i in COCO_KP_LEFT:
+        #                 color = (0, 255, 255)
+        #             else:
+        #                 color = (255, 255, 0)
+        #             cv2.circle(img, (int(round(x)), int(round(y))), 2, color, thickness=2)
+        #             # cv2.putText(img, COCO_KP_NAMES_SHORT[i], (int(round(x + 10)), int(round(y + 10))),
+        #             #             cv2.FONT_HERSHEY_PLAIN, 1, (255, 255, 0), thickness=1)
+        # cv2.imshow('', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+        labels_out = torch.zeros((nl, labels.shape[-1] + 1))
         if nl:
             labels_out[:, 1:] = torch.from_numpy(labels)
-
         # Convert
         img = img.transpose((2, 0, 1))[::-1]  # HWC to CHW, BGR to RGB
         img = np.ascontiguousarray(img)
@@ -654,7 +713,7 @@ def load_image(self, i):
         return self.imgs[i], self.img_hw0[i], self.img_hw[i]  # im, hw_original, hw_resized
 
 
-def load_mosaic(self, index):
+def load_mosaic(self, index, kp_bbox=None):
     # loads images in a 4-mosaic
 
     labels4, segments4 = [], []
@@ -706,7 +765,8 @@ def load_mosaic(self, index):
                                        scale=self.hyp['scale'],
                                        shear=self.hyp['shear'],
                                        perspective=self.hyp['perspective'],
-                                       border=self.mosaic_border)  # border to remove
+                                       border=self.mosaic_border,
+                                       kp_bbox=kp_bbox)  # border to remove
 
     return img4, labels4
 
@@ -881,16 +941,16 @@ def verify_image_label(args):
             nf = 1  # label found
             with open(lb_file, 'r') as f:
                 l = [x.split() for x in f.read().strip().splitlines() if len(x)]
-                if any([len(x) > 8 for x in l]):  # is segment
-                    classes = np.array([x[0] for x in l], dtype=np.float32)
-                    segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
-                    l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
+                # if any([len(x) > 8 for x in l]):  # is segment
+                #     classes = np.array([x[0] for x in l], dtype=np.float32)
+                #     segments = [np.array(x[1:], dtype=np.float32).reshape(-1, 2) for x in l]  # (cls, xy1...)
+                #     l = np.concatenate((classes.reshape(-1, 1), segments2boxes(segments)), 1)  # (cls, xywh)
                 l = np.array(l, dtype=np.float32)
             if len(l):
-                assert l.shape[1] == 5, 'labels require 5 columns each'
+                # assert l.shape[1] == 5, 'labels require 5 columns each'
                 assert (l >= 0).all(), 'negative labels'
-                assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
-                assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
+                # assert (l[:, 1:] <= 1).all(), 'non-normalized or out of bounds coordinate labels'
+                # assert np.unique(l, axis=0).shape[0] == l.shape[0], 'duplicate labels'
             else:
                 ne = 1  # label empty
                 l = np.zeros((0, 5), dtype=np.float32)
