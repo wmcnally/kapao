@@ -181,7 +181,7 @@ def plot_images(images, targets, paths=None, fname='images.jpg', names=None, max
             ti = targets[targets[:, 0] == i]  # image targets
             boxes = xywh2xyxy(ti[:, 2:6]).T
             classes = ti[:, 1].astype('int')
-            labels = ti.shape[1] == 6  # labels if no conf column
+            labels = ti.shape[1] == 6 or ti.shape[1] > 7  # labels if no conf column or pose objects
             conf = None if labels else ti[:, 6]  # check for confidence presence (label vs pred)
 
             if boxes.shape[1]:
