@@ -174,7 +174,7 @@ def run(data,
             loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls
 
         # Run NMS
-        out = out[..., :6]
+        out = out[..., :(5 + nc)]
         targets = targets[:, :6]
 
         targets[:, 2:] *= torch.Tensor([width, height, width, height]).to(device)  # to pixels
