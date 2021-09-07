@@ -166,7 +166,11 @@ class _RepeatSampler(object):
 class LoadImages:  # for inference
     def __init__(self, path, img_size=640, stride=32, auto=True):
         p = str(Path(path).absolute())  # os-agnostic absolute path
-        if '*' in p:
+        if p.endswith('.txt'):
+            with open(p, 'r') as f:
+                files = f.readlines()
+            files = [l.strip() for l in files]
+        elif '*' in p:
             files = sorted(glob.glob(p, recursive=True))  # glob
         elif os.path.isdir(p):
             files = sorted(glob.glob(os.path.join(p, '*.*')))  # dir
