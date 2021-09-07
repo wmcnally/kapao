@@ -96,7 +96,7 @@ class Model(nn.Module):
 
         # Define model
         ch = self.yaml['ch'] = self.yaml.get('ch', ch)  # input channels
-        if nc and nc != self.yaml['nc']:
+        if nc + num_coords and nc + num_coords != self.yaml['nc']:
             LOGGER.info(f"Overriding model.yaml nc={self.yaml['nc']} with nc={nc + num_coords}")
             self.yaml['nc'] = nc + num_coords  # override yaml value
         if anchors:
