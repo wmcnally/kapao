@@ -148,13 +148,14 @@ class ComputeLoss:
                 # Keypoints
                 if self.num_coords:
                     tkp = tkps[i]
-                    pkp = ps[:, 5 + self.nc:].reshape((-1, self.num_coords // 2, 2))
-                    pkp = (pkp.sigmoid() * 4. - 2.) * anchors[i][:, None, :]  # range [-2, 2] * anchor
                     vis = tkp[..., 2] > 0
-                    pkp_vis = pkp[vis]
                     tkp_vis = tkp[vis]
-                    l2 = torch.linalg.norm(pkp_vis - tkp_vis[..., :2], dim=-1)
-                    lkps += torch.mean(l2)
+                    if len(tkp_vis):
+                        pkp = ps[:, 5 + self.nc:].reshape((-1, self.num_coords // 2, 2))
+                        pkp = (pkp.sigmoid() * 4. - 2.) * anchors[i][:, None, :]  # range [-2, 2] * anchor
+                        pkp_vis = pkp[vis]
+                        l2 = torch.linalg.norm(pkp_vis - tkp_vis[..., :2], dim=-1)
+                        lkps += torch.mean(l2)
 
                 # Objectness
                 score_iou = iou.detach().clamp(0).type(tobj.dtype)
