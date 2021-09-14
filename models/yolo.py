@@ -74,8 +74,10 @@ class Detect(nn.Module):
                     wh = (y[..., 2:4] * 2) ** 2 * self.anchor_grid[i].view(1, self.na, 1, 1, 2)  # wh
                     y = torch.cat((xy, wh, y[..., 4:]), -1)
                 z.append(y.view(bs, -1, self.no))
+                # z.append(y)
 
         return x if self.training else (torch.cat(z, 1), x)
+        # return x if self.training else (z, x)
 
     @staticmethod
     def _make_grid(nx=20, ny=20):
@@ -127,21 +129,23 @@ class Model(nn.Module):
         self.info()
         LOGGER.info('')
 
-    def forward(self, x, augment=False, profile=False, visualize=False):
+    def forward(self, x, augment=False, profile=False, visualize=False, kp_flip=None):
         if augment:
-            return self.forward_augment(x)  # augmented inference, None
+            return self.forward_augment(x, kp_flip)  # augmented inference, None
         return self.forward_once(x, profile, visualize)  # single-scale inference, train
 
-    def forward_augment(self, x):
+    def forward_augment(self, x, kp_flip):
         img_size = x.shape[-2:]  # height, width
-        s = [1, 0.83, 0.67]  # scales
-        f = [None, 3, None]  # flips (2-ud, 3-lr)
+        # s = [1, 0.83, 0.67]  # scales
+        # f = [None, 3, None]  # flips (2-ud, 3-lr)
+        s = [0.5, 1, 2]
+        f = [None, 3, None]
         y = []  # outputs
         for si, fi in zip(s, f):
             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
             yi = self.forward_once(xi)[0]  # forward
             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
-            yi = self._descale_pred(yi, fi, si, img_size)
+            yi = self._descale_pred(yi, fi, si, img_size, kp_flip)
             y.append(yi)
         return torch.cat(y, 1), None  # augmented inference, train
 
@@ -172,14 +176,22 @@ class Model(nn.Module):
             LOGGER.info('%.1fms total' % sum(dt))
         return x
 
-    def _descale_pred(self, p, flips, scale, img_size):
+    def _descale_pred(self, p, flips, scale, img_size, kp_flip):
         # de-scale predictions following augmented inference (inverse operation)
         if self.inplace:
-            p[..., :4] /= scale  # de-scale
+            p[..., :4] /= scale  # de-scale bbox
+            if kp_flip:
+                p[..., -self.num_coords:] /= scale  # de-scale kp
             if flips == 2:
                 p[..., 1] = img_size[0] - p[..., 1]  # de-flip ud
             elif flips == 3:
                 p[..., 0] = img_size[1] - p[..., 0]  # de-flip lr
+                if kp_flip:
+                    p[..., 6:6 + self.nc - 1] = p[..., 6:6 + self.nc - 1][..., kp_flip]  # de-flip bbox conf
+                    p[..., -self.num_coords::2] = img_size[1] - p[..., -self.num_coords::2]  # de-flip kp x
+                    p[..., -self.num_coords::2] = p[..., -self.num_coords::2][..., kp_flip]  # swap lr kp (x)
+                    p[..., -self.num_coords + 1::2] = p[..., -self.num_coords + 1::2][..., kp_flip]  # swap lr kp (y)
+
         else:
             x, y, wh = p[..., 0:1] / scale, p[..., 1:2] / scale, p[..., 2:4] / scale  # de-scale
             if flips == 2:
