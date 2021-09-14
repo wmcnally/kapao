@@ -11,6 +11,7 @@ if __name__ == '__main__':
     parser.add_argument('--data', default='coco_kp.yaml')
     parser.add_argument('--hyp', default='hyp.scratch-kp.yaml')
     parser.add_argument('--no-obj-pose', action='store_true')
+    parser.add_argument('--skip-no-kp', action='store_true')
     args = parser.parse_args()
 
     obj_pose = not args.no_obj_pose
@@ -34,8 +35,9 @@ if __name__ == '__main__':
             a = coco.anns[id]
 
             if split == 'train':
-                if a['iscrowd'] or (np.sum(a['keypoints'][2::3]) == 0) or (a['num_keypoints'] == 0):
-                    # TODO see if included non-keypoint persons improves AP
+                if a['iscrowd']:
+                    continue
+                if args.skip_no_kp and ((np.sum(a['keypoints'][2::3]) == 0) or (a['num_keypoints'] == 0)):
                     continue
 
             if a['image_id'] in coco.imgs:
