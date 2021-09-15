@@ -11,7 +11,7 @@ cls_pw: 0.631
 obj: 0.301
 obj_pw: 0.911
 iou_t: 0.2
-kp: 0.05
+kp: 0.0185
 anchor_t: 2.91
 # anchors: 3.63
 fl_gamma: 0.0
