@@ -552,7 +552,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
-        if 'kp_bbox' in hyp:
+        if hyp and 'kp_bbox' in hyp:
             kp_bbox = hyp['kp_bbox']
         else:
             kp_bbox = None

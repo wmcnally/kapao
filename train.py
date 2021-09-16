@@ -30,6 +30,7 @@ FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
 import val  # for end-of-epoch mAP
+import val_kp
 from models.experimental import attempt_load
 from models.yolo import Model
 from utils.autoanchor import check_anchors
@@ -217,7 +218,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # Process 0
     if RANK in [-1, 0]:
         val_loader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE * 2, gs, single_cls,
-                                       hyp=hyp, cache=None if noval else opt.cache, rect=True, rank=-1,
+                                       hyp=hyp, cache=None if noval else opt.cache, rect=False, rank=-1,
                                        workers=workers, pad=0.5,
                                        prefix=colorstr('val: '))[0]
 
@@ -350,17 +351,11 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
-                results, maps, _ = val.run(data_dict,
+                results, maps, _ = val_kp.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE * 2,
                                            imgsz=imgsz,
                                            model=ema.ema,
-                                           single_cls=single_cls,
                                            dataloader=val_loader,
-                                           save_dir=save_dir,
-                                           save_json=is_coco and final_epoch,
-                                           verbose=nc < 50 and final_epoch,
-                                           plots=plots and final_epoch,
-                                           callbacks=callbacks,
                                            compute_loss=compute_loss)
 
             # Update best mAP
