@@ -1,10 +1,8 @@
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 path: /media/wmcnally/data/coco
-train: train2017.txt
-val: val2017.txt
-
-val_annot: /media/wmcnally/data/coco/annotations/person_keypoints_val2017.json
+train: train2017_debug.txt
+val: val2017_debug.txt
 
 # number of classes
 nc: 18

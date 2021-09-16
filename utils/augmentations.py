@@ -229,10 +229,10 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
         if n and kp_bbox is not None:
             for i in range(int(targets[:, 0].max()) + 1):
                 if i > 0:
-                    if isinstance(kp_bbox, int):
-                        kp_bbox_i = kp_bbox
-                    else:
+                    if isinstance(kp_bbox, list):
                         kp_bbox_i = kp_bbox[i - 1]
+                    else:
+                        kp_bbox_i = kp_bbox
 
                     kp_mask = targets[:, 0] == i
                     kp_targets = targets[kp_mask]

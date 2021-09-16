@@ -69,10 +69,10 @@ if __name__ == '__main__':
                     # write keypoint objects
                     for i, (x, y, v) in enumerate(keypoints):
                         if v:
-                            if isinstance(hyp['kp_bbox'], int):
-                                kp_bbox = hyp['kp_bbox']
-                            else:
+                            if isinstance(hyp['kp_bbox'], list):
                                 kp_bbox = hyp['kp_bbox'][i]
+                            else:
+                                kp_bbox = hyp['kp_bbox']
 
                             s = '{} {:.6f} {:.6f} {:.6f} {:.6f}'.format(
                                 i + 1, x / img_w, y / img_h,
