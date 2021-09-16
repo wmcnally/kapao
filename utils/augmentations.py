@@ -226,19 +226,24 @@ def random_perspective(im, targets=(), segments=(), degrees=10, translate=.1, sc
                 targets[person_mask, 5:] = keypoints.reshape(person_targets.shape[0], -1)
 
         # resize keypoint bbox sizes back to original
-        if n and kp_bbox:
+        if n and kp_bbox is not None:
             for i in range(int(targets[:, 0].max()) + 1):
                 if i > 0:
+                    if isinstance(kp_bbox, int):
+                        kp_bbox_i = kp_bbox
+                    else:
+                        kp_bbox_i = kp_bbox[i - 1]
+
                     kp_mask = targets[:, 0] == i
                     kp_targets = targets[kp_mask]
 
                     xc = kp_targets[:, [1, 3]].mean(axis=-1)
                     yc = kp_targets[:, [2, 4]].mean(axis=-1)
 
-                    kp_targets[:, 1] = xc - (kp_bbox * width) / 2
-                    kp_targets[:, 2] = yc - (kp_bbox * height) / 2
-                    kp_targets[:, 3] = xc + (kp_bbox * width) / 2
-                    kp_targets[:, 4] = yc + (kp_bbox * height) / 2
+                    kp_targets[:, 1] = xc - (kp_bbox_i * width) / 2
+                    kp_targets[:, 2] = yc - (kp_bbox_i * height) / 2
+                    kp_targets[:, 3] = xc + (kp_bbox_i * width) / 2
+                    kp_targets[:, 4] = yc + (kp_bbox_i * height) / 2
 
                     targets[kp_mask] = kp_targets
 

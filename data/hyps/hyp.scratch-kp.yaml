@@ -33,4 +33,21 @@ fliplr: 0.5  # image flip left-right (probability)
 mosaic: 1.0  # image mosaic (probability)
 mixup: 0.0  # image mixup (probability)
 copy_paste: 0.0  # segment copy-paste (probability)
-kp_bbox: 0.05
+kp_bbox:
+- 0.026  # nose
+- 0.025  # left eye
+- 0.025  # right eye
+- 0.035  # left ear
+- 0.035  # right ear
+- 0.079  # left shoulder
+- 0.079  # right shoulder
+- 0.072  # left elbow
+- 0.072  # right elbow
+- 0.062  # left wrist
+- 0.062  # right wrist
+- 0.107  # left hip
+- 0.107  # right hip
+- 0.087  # left knee
+- 0.087  # right knee
+- 0.089  # left ankle
+- 0.089  # right ankle
