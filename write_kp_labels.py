@@ -9,7 +9,7 @@ import yaml
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', default='coco_kp.yaml')
-    parser.add_argument('--hyp', default='hyp.scratch-kp.yaml')
+    parser.add_argument('--hyp', default='hyp.kp.yaml')
     parser.add_argument('--no-obj-pose', action='store_true')
     parser.add_argument('--skip-no-kp', action='store_true')
     args = parser.parse_args()
