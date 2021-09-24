@@ -43,9 +43,9 @@ if __name__ == '__main__':
             if a['image_id'] in coco.imgs:
                 img_info = coco.imgs[a['image_id']]
 
-                img_path = osp.join(data['path'], 'images', '{}2017'.format(split), img_info['file_name'])
-                if img_path not in img_paths:
-                    img_paths.append(img_path)
+                # img_path = osp.join(data['path'], 'images', '{}2017'.format(split), img_info['file_name'])
+                # if img_path not in img_paths:
+                #     img_paths.append(img_path)
 
                 img_h, img_w = img_info['height'], img_info['width']
                 x, y, w, h = a['bbox']
@@ -88,14 +88,28 @@ if __name__ == '__main__':
             if (count + 1) % 1000 == 0:
                 print('{} {}/{}'.format(split, count + 1, len(coco.anns.keys())))
 
+        # if split == 'train':
+        #     print('Writing image paths...')
+        #     with open(img_txt_path, 'w') as f:
+        #         for img_path in img_paths:
+        #             f.write(img_path + '\n')
+        #
+        #     with open(img_txt_path_debug, 'w') as f:
+        #         for i, img_path in enumerate(img_paths):
+        #             if i == 128:
+        #                 break
+        #             f.write(img_path + '\n')
+        # else:
+
         print('Writing image paths...')
         with open(img_txt_path, 'w') as f:
-            for img_path in img_paths:
-                f.write(img_path + '\n')
+            for img_info in coco.imgs.values():
+                f.write(osp.join(data['path'], 'images', '{}2017'.format(split), img_info['file_name']) + '\n')
 
         with open(img_txt_path_debug, 'w') as f:
-            for i, img_path in enumerate(img_paths):
+            for i, img_info in enumerate(coco.imgs.values()):
                 if i == 128:
                     break
-                f.write(img_path + '\n')
+                f.write(osp.join(data['path'], 'images', '{}2017'.format(split), img_info['file_name']) + '\n')
+
 

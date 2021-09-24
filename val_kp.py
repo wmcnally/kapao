@@ -84,7 +84,7 @@ def run(data,
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
         dataloader = create_dataloader(data[task], imgsz, batch_size, gs, rect=False,
-                                       prefix=colorstr(f'{task}: '))[0]
+                                       prefix=colorstr(f'{task}: '), kp_flip=data['kp_flip'])[0]
 
     seen = 0
     mp, mr, map50, map, t0, t1, t2 = 0., 0., 0., 0., 0., 0., 0.
