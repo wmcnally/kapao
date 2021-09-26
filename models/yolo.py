@@ -141,13 +141,16 @@ class Model(nn.Module):
         s = [0.5, 1, 2]
         f = [None, 3, None]
         y = []  # outputs
+        train_out = None
         for si, fi in zip(s, f):
             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
-            yi = self.forward_once(xi)[0]  # forward
+            yi, train_out_i = self.forward_once(xi)  # forward
+            if s == 1:
+                train_out = train_out_i
             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
             yi = self._descale_pred(yi, fi, si, img_size, kp_flip)
             y.append(yi)
-        return torch.cat(y, 1), None  # augmented inference, train
+        return torch.cat(y, 1), train_out  # augmented inference, train
 
     def forward_once(self, x, profile=False, visualize=False):
         y, dt = [], []  # outputs
