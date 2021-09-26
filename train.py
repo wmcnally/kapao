@@ -358,7 +358,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            model=ema.ema,
                                            dataloader=val_loader,
                                            compute_loss=compute_loss,
-                                           augment=True)
+                                           augment=False)
                 # results, maps, _ = val.run(data_dict,
                 #                            batch_size=batch_size // WORLD_SIZE * 2,
                 #                            imgsz=imgsz,
