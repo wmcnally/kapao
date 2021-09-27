@@ -20,4 +20,4 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --weights yolov5s.pt \
 --project runs/test \
 --name train \
---workers 256
+--workers 128
