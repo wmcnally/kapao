@@ -2,7 +2,7 @@
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=4
 #SBATCH --time=1-00:00:00
-#SBATCH --job-name=s_e500
+#SBATCH --job-name=s_e500_r
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
 
