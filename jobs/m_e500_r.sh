@@ -2,9 +2,11 @@
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=4
 #SBATCH --time=1-00:00:00
-#SBATCH --job-name=l_e500_b64
+#SBATCH --job-name=m_e500
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
+
+scancel 199915
 
 module load anaconda3
 source activate yolo-pose
@@ -13,12 +15,12 @@ source activate yolo-pose
 
 python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --img 640 \
---batch 64 \
+--batch 192 \
 --epochs 500 \
 --data data/coco_kp.yaml \
 --hyp data/hyps/hyp.kp.yaml \
---weights yolov5l.pt \
---project runs/l_e500_b64 \
+--weights yolov5m.pt \
+--project runs/m_e500 \
 --name train \
 --workers 128 \
---resume runs/l_e500_b64/train/weights/last.pt
+--resume runs/m_e500/train/weights/last.pt
