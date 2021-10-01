@@ -13,7 +13,7 @@ source activate yolo-pose
 
 python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --img 640 \
---batch 224 \
+--batch 192 \
 --epochs 500 \
 --data data/coco_kp.yaml \
 --hyp data/hyps/hyp.kp.yaml \
