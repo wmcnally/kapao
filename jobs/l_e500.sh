@@ -6,8 +6,6 @@
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
 
-scancel 200368
-
 module load anaconda3
 source activate yolo-pose
 source deactivate yolo-pose
