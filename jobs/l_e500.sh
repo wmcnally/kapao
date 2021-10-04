@@ -21,4 +21,3 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --project runs/l_e500 \
 --name train \
 --workers 128 \
---resume runs/l_e500/train/weights/last.pt
