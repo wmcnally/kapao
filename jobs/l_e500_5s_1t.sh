@@ -18,6 +18,6 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --data data/coco_kp.yaml \
 --hyp data/hyps/hyp.kp_0.5s_0.1t.yaml \
 --weights yolov5l.pt \
---project runs/l_e500 \
+--project runs/l_e500_5s_1t \
 --name train \
 --workers 128 \
