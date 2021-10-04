@@ -6,6 +6,8 @@
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
 
+scancel 200529
+
 module load anaconda3
 source activate yolo-pose
 source deactivate yolo-pose
@@ -20,4 +22,5 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --weights yolov5x.pt \
 --project runs/x_e500 \
 --name train \
---workers 128
+--workers 128 \
+--resume runs/x_e500/train/weights/last.pt
