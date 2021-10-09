@@ -129,23 +129,22 @@ class Model(nn.Module):
         self.info()
         LOGGER.info('')
 
-    def forward(self, x, augment=False, profile=False, visualize=False, kp_flip=None):
+    def forward(self, x, augment=False, profile=False, visualize=False, kp_flip=None,
+                scales=[0.5, 1, 2], flips=[None, 3, None]):
         if augment:
-            return self.forward_augment(x, kp_flip)  # augmented inference, None
+            return self.forward_augment(x, kp_flip, s=scales, f=flips)  # augmented inference, None
         return self.forward_once(x, profile, visualize)  # single-scale inference, train
 
-    def forward_augment(self, x, kp_flip):
+    def forward_augment(self, x, kp_flip, s=[0.5, 1, 2], f=[None, 3, None]):
         img_size = x.shape[-2:]  # height, width
         # s = [1, 0.83, 0.67]  # scales
         # f = [None, 3, None]  # flips (2-ud, 3-lr)
-        s = [0.5, 1, 2]
-        f = [None, 3, None]
         y = []  # outputs
         train_out = None
         for si, fi in zip(s, f):
             xi = scale_img(x.flip(fi) if fi else x, si, gs=int(self.stride.max()))
             yi, train_out_i = self.forward_once(xi)  # forward
-            if si == 1:
+            if si == 1 and fi is None:
                 train_out = train_out_i
             # cv2.imwrite(f'img_{si}.jpg', 255 * xi[0].cpu().numpy().transpose((1, 2, 0))[:, :, ::-1])  # save
             yi = self._descale_pred(yi, fi, si, img_size, kp_flip)

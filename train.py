@@ -59,9 +59,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           device,
           callbacks=Callbacks()
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, \
+        val_scales, val_flips = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
+        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze, opt.val_scales, opt.val_flips
+
+    val_flips = [None if f == -1 else f for f in val_flips]
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -358,20 +361,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            model=ema.ema,
                                            dataloader=val_loader,
                                            compute_loss=compute_loss,
-                                           augment=True)
-                # results, maps, _ = val.run(data_dict,
-                #                            batch_size=batch_size // WORLD_SIZE * 2,
-                #                            imgsz=imgsz,
-                #                            model=ema.ema,
-                #                            single_cls=single_cls,
-                #                            dataloader=val_loader,
-                #                            save_dir=save_dir,
-                #                            save_json=is_coco and final_epoch,
-                #                            verbose=nc < 50 and final_epoch,
-                #                            plots=plots and final_epoch,
-                #                            callbacks=callbacks,
-                #                            compute_loss=compute_loss)
-
+                                           scales=val_scales,
+                                           flips=val_flips)
 
             # Update best mAP
             fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
@@ -416,18 +407,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     if RANK in [-1, 0]:
         LOGGER.info(f'\n{epoch - start_epoch + 1} epochs completed in {(time.time() - t0) / 3600:.3f} hours.')
         if not evolve:
-            if is_coco:  # COCO dataset
-                for m in [last, best] if best.exists() else [last]:  # speed, mAP tests
-                    results, _, _ = val.run(data_dict,
-                                            batch_size=batch_size // WORLD_SIZE * 2,
-                                            imgsz=imgsz,
-                                            model=attempt_load(m, device).half(),
-                                            iou_thres=0.7,  # NMS IoU threshold for best pycocotools results
-                                            single_cls=single_cls,
-                                            dataloader=val_loader,
-                                            save_dir=save_dir,
-                                            save_json=True,
-                                            plots=False)
             # Strip optimizers
             for f in last, best:
                 if f.exists():
@@ -477,6 +456,8 @@ def parse_opt(known=False):
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
+    parser.add_argument('--val-scales', type=float, nargs='+', default=[0.5, 1, 2])
+    parser.add_argument('--val-flips', type=int, nargs='+', default=[-1, 3, -1])
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 

@@ -48,7 +48,8 @@ def run(data,
         iou_thres_kp=0.45,
         conf_thres_kp_person=0.2,
         overwrite_tol=50,  # pixels for kp det overwrite
-        augment=False,  # augmented inference
+        scales=[0.5, 1, 2],
+        flips=[None, 3, None],
         half=True,  # use FP16 half-precision inference
         model=None,
         dataloader=None,
@@ -102,12 +103,13 @@ def run(data,
         t0 += t - t_
 
         # Run model
-        out, train_out = model(img, augment=augment, kp_flip=data['kp_flip'])  # inference and training outputs
+        out, train_out = model(img, augment=True, kp_flip=data['kp_flip'], scales=scales, flips=flips)  # inference and training outputs
         t1 += time_sync() - t
 
         # Compute loss
-        if compute_loss:
-            loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls, kp
+        if train_out:  # only computed if no scale / flipping
+            if compute_loss:
+                loss += compute_loss([x.float() for x in train_out], targets)[1]  # box, obj, cls, kp
 
         # Run NMS
         t = time_sync()
@@ -174,8 +176,6 @@ def run(data,
             json_name = '{}_{}'.format(
                 osp.splitext(osp.split(task)[-1])[0],
                 osp.splitext(weights_name)[0])
-            if augment:
-                json_name += '_aug'
             json_name += '_c{}_i{}'.format(conf_thres, iou_thres)
             if use_kp_dets:
                 json_name += '_ck{}_ckp{}_ik{}_t{}'.format(conf_thres_kp,
