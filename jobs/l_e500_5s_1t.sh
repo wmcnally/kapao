@@ -19,6 +19,8 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --epochs 500 \
 --data data/coco_kp.yaml \
 --hyp data/hyps/hyp.kp_0.5s_0.1t.yaml \
+--val-scales 0.5 1 2 \
+--val-flips -1 3 -1 \
 --weights yolov5l.pt \
 --project runs/l_e500_5s_1t \
 --name train \
