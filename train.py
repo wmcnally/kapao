@@ -476,6 +476,10 @@ def main(opt):
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.safe_load(f))  # replace
+        if 'val_scales' not in opt:
+            opt.val_scales = [0.5, 1, 2]
+        if 'val_flips' not in opt:
+            opt.val_flip = [-1, 3, -1]
         opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
         LOGGER.info(f'Resuming training from {ckpt}')
     else:
