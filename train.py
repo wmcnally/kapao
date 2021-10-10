@@ -59,12 +59,13 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           device,
           callbacks=Callbacks()
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, \
-        val_scales, val_flips = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze, opt.val_scales, opt.val_flips
+        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
 
-    val_flips = [None if f == -1 else f for f in val_flips]
+    # val_flips = [None if f == -1 else f for f in val_flips]
+    val_scales = [0.5, 1, 2]
+    val_flips = [None, 3, None]
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -476,10 +477,6 @@ def main(opt):
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:
             opt = argparse.Namespace(**yaml.safe_load(f))  # replace
-        if 'val_scales' not in opt:
-            opt.val_scales = [0.5, 1, 2]
-        if 'val_flips' not in opt:
-            opt.val_flip = [-1, 3, -1]
         opt.cfg, opt.weights, opt.resume = '', ckpt, True  # reinstate
         LOGGER.info(f'Resuming training from {ckpt}')
     else:
