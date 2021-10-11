@@ -59,13 +59,14 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
           device,
           callbacks=Callbacks()
           ):
-    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze = \
+    save_dir, epochs, batch_size, weights, single_cls, evolve, data, cfg, resume, noval, nosave, workers, freeze, \
+        val_scales, val_flips = \
         Path(opt.save_dir), opt.epochs, opt.batch_size, opt.weights, opt.single_cls, opt.evolve, opt.data, opt.cfg, \
-        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze
+        opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze, opt.val_scales, opt.val_flips
 
-    # val_flips = [None if f == -1 else f for f in val_flips]
-    val_scales = [0.5, 1, 2]
-    val_flips = [None, 3, None]
+    val_flips = [None if f == -1 else f for f in val_flips]
+    # val_scales = [0.5, 1, 2]
+    # val_flips = [None, 3, None]
 
     # Directories
     w = save_dir / 'weights'  # weights dir
