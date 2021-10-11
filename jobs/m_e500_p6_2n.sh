@@ -2,7 +2,7 @@
 #SBATCH --nodes=2
 #SBATCH --gpus-per-node=4
 #SBATCH --time=1-00:00:00
-#SBATCH --job-name=m_e500_p6
+#SBATCH --job-name=m_e500_p6_2n
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
 
@@ -20,7 +20,6 @@ python -m torch.distributed.launch --nproc_per_node 4 --nnodes 2 train.py \
 --val-scales 1 \
 --val-flips -1 \
 --weights yolov5m6.pt \
---project runs/m_e500_p6 \
+--project runs/m_e500_p6_2n \
 --name train \
---workers 256 \
---resume runs/m_e500_p6/train/weights/last.pt
+--workers 256
