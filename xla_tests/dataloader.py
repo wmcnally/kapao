@@ -29,11 +29,31 @@ def _mp_fn(index, opt):
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
 
-    dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
-                                  hyp=hyp, kp_flip=data_dict['kp_flip'])
+    train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
+                                        hyp=hyp, kp_flip=data_dict['kp_flip'])
 
-    img, targets, path, shape = dataset.__getitem__(0)
-    print(img.shape)
+    train_sampler = None
+    if WORLD_SIZE > 1:
+        train_sampler = torch.utils.data.distributed.DistributedSampler(
+            train_dataset,
+            num_replicas=WORLD_SIZE,
+            rank=RANK,
+            shuffle=True)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        batch_size=opt.batch_size // WORLD_SIZE,
+        sampler=train_sampler,
+        drop_last=True,
+        shuffle=False if train_sampler else True,
+        num_workers=opt.workers)
+
+    train_device_loader = pl.MpDeviceLoader(train_loader, device)
+
+    for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
+        print(imgs.shape)
+        break
+
 
 
 if __name__ == '__main__':
