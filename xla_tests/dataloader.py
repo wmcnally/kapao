@@ -17,9 +17,13 @@ import torch_xla.distributed.xla_multiprocessing as xmp
 
 def _mp_fn(index, opt):
     device = xm.xla_device()
-    data_dict = check_dataset(opt.data)
-    train_path = data_dict['train']
-    print(train_path)
+    WORLD_SIZE = xm.xrt_world_size()
+
+    print(WORLD_SIZE)
+
+    # data_dict = check_dataset(opt.data)
+    # train_path = data_dict['train']
+    # print(train_path)
 
     # train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
     #                                           hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=RANK,
