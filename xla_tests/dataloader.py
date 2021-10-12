@@ -15,7 +15,7 @@ import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
 
 
-def _mp_fn(index):
+def _mp_fn(index, opt):
     device = xm.xla_device()
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
