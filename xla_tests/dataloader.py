@@ -23,8 +23,6 @@ def _mp_fn(index, opt):
     WORLD_SIZE = xm.xrt_world_size()
     RANK = xm.get_ordinal()
 
-    print(RANK)
-
     with open(opt.hyp) as f:
         hyp = yaml.safe_load(f)  # load hyps dict
 
