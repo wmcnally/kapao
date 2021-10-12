@@ -29,6 +29,7 @@ def _mp_fn(index):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='data/coco_kp.yaml', help='dataset.yaml path')
+    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     opt = parser.parse_args()
 
     xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.workers)
