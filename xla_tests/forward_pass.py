@@ -1,7 +1,14 @@
+import sys
+from pathlib import Path
+
+FILE = Path(__file__).absolute()
+sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
+
 from models.yolo import Model
 import torch
 import time
 import argparse
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
