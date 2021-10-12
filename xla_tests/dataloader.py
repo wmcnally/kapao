@@ -37,15 +37,6 @@ def _mp_fn(index, opt):
     img, targets, path, shape = dataset.__getitem__(0)
     print(img.shape)
 
-    # train_device_loader = pl.MpDeviceLoader(train_loader, device)
-    #
-    # for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
-    #     if i == 10:
-    #         break
-    #     print(imgs.shape)
-
-    sys.exit()
-
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
