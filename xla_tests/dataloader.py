@@ -8,7 +8,7 @@ from models.yolo import Model
 import torch
 import time
 import argparse
-from utils.datasets import create_dataloader, check_dataset
+from utils.datasets import create_dataloader, check_dataset, LoadImagesAndLabels
 import yaml
 import sys
 
@@ -31,16 +31,18 @@ def _mp_fn(index, opt):
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
 
-    train_loader, _ = create_dataloader(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE, 32,
-                                        hyp=hyp, cache=opt.cache,
-                                        rank=RANK, workers=opt.workers, kp_flip=data_dict['kp_flip'])
+    dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
+                                  hyp=hyp, kp_flip=data_dict['kp_flip'])
 
-    train_device_loader = pl.MpDeviceLoader(train_loader, device)
+    img, targets, path, shape = dataset.__getitem__(0)
+    print(img.shape)
 
-    for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
-        if i == 10:
-            break
-        print(imgs.shape)
+    # train_device_loader = pl.MpDeviceLoader(train_loader, device)
+    #
+    # for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
+    #     if i == 10:
+    #         break
+    #     print(imgs.shape)
 
     sys.exit()
 
@@ -55,4 +57,4 @@ if __name__ == '__main__':
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     opt = parser.parse_args()
 
-    xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.workers)
+    xmp.spawn(_mp_fn, args=(opt,), nprocs=8)
