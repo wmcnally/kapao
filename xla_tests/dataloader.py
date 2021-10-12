@@ -44,8 +44,9 @@ if __name__ == '__main__':
     parser.add_argument('--hyp', type=str, default='data/hyps/hyp.kp.yaml', help='hyperparameters path')
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
+    parser.add_argument('--tpu-cores', type=int, default=8)
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     opt = parser.parse_args()
 
-    xmp.spawn(_mp_fn, args=(opt,), nprocs=8)
+    xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores)
