@@ -8,7 +8,7 @@ from models.yolo import Model
 import torch
 import time
 import argparse
-from utils.datasets import create_dataloader, check_dataset, LoadImagesAndLabels
+from utils.datasets import create_dataloader, InfiniteDataLoader, check_dataset, LoadImagesAndLabels
 import yaml
 import sys
 
@@ -40,13 +40,14 @@ def _mp_fn(index, opt):
             rank=RANK,
             shuffle=True)
 
-    train_loader = torch.utils.data.DataLoader(
+    train_loader = InfiniteDataLoader(
         train_dataset,
         batch_size=opt.batch_size // WORLD_SIZE,
+        num_workers=opt.workers,
         sampler=train_sampler,
-        drop_last=True,
-        shuffle=False if train_sampler else True,
-        num_workers=opt.workers)
+        pin_memory=True,
+        collate_fn=LoadImagesAndLabels.collate_fn
+    )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
 
