@@ -38,7 +38,7 @@ if __name__ == '__main__':
         img_txt_path_debug = osp.join(data['path'], '{}_debug.txt'.format(split))
         labels_path = osp.join(data['path'], 'labels/{}'.format(split if is_coco else ''))
         os.makedirs(labels_path, exist_ok=True)
-        coco = COCO(data['path'] + data['annotations_prefix'] + '{}.json'.format(split))
+        coco = COCO(osp.join(data['path'], data['annotations_prefix'] + '{}.json'.format(split)))
 
         for count, id in enumerate(coco.anns.keys()):
             a = coco.anns[id]
