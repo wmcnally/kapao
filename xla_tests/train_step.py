@@ -12,6 +12,7 @@ import time
 import argparse
 from utils.datasets import create_dataloader, InfiniteDataLoader, check_dataset, LoadImagesAndLabels, load_image
 from utils.loss import ComputeLoss
+from utils.general import check_img_size
 from utils.augmentations import letterbox
 import yaml
 import sys
@@ -29,17 +30,9 @@ import torch_xla.distributed.xla_multiprocessing as xmp
 import torch_xla.utils.utils as xu
 
 
-def _mp_fn(index, opt):
+def _mp_fn(index, opt, model, hyp):
     device = xm.xla_device()
-
-    with open(opt.hyp) as f:
-        hyp = yaml.safe_load(f)  # load hyps dict
-
-    data_dict = check_dataset(opt.data)
-    num_coords = data_dict['num_coords'] if 'num_coords' in data_dict.keys() else 0
-    nc = int(data_dict['nc'])  # number of classes
-
-    model = Model('models/yolov5s.yaml', ch=3, nc=nc, anchors=hyp.get('anchors'), num_coords=num_coords).to(device)
+    model.to(device)
 
     WORLD_SIZE = xm.xrt_world_size()
     RANK = xm.get_ordinal()
@@ -98,10 +91,27 @@ if __name__ == '__main__':
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
     kp_flip = data_dict['kp_flip'] if 'kp_flip' in data_dict.keys() else None
+    num_coords = data_dict['num_coords'] if 'num_coords' in data_dict.keys() else 0
+    nc = int(data_dict['nc'])  # number of classes
+
+    model = Model('models/yolov5s.yaml', ch=3, nc=nc, anchors=hyp.get('anchors'), num_coords=num_coords)
+
+    # Image sizes
+    gs = max(int(model.stride.max()), 32)  # grid size (max stride)
+    nl = model.model[-1].nl  # number of detection layers (used for scaling hyp['obj'])
+    imgsz = check_img_size(opt.imgsz, gs, floor=gs * 2)  # verify imgsz is gs-multiple
+
+    # Model parameters
+    hyp['box'] *= 3. / nl  # scale to layers
+    hyp['cls'] *= nc / 80. * 3. / nl  # scale to classes and layers
+    hyp['obj'] *= (imgsz / 640) ** 2 * 3. / nl  # scale to image size and layers
+    hyp['kp'] *= 3. / nl
+    model.nc = nc  # attach number of classes to model
+    model.hyp = hyp  # attach hyperparameters to model
 
     # load dataset globally, cache into VM memory
-    TRAIN_DATASET = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
+    TRAIN_DATASET = LoadImagesAndLabels(train_path, imgsz, opt.batch_size // opt.tpu_cores, stride=gs,
                                         augment=True, hyp=hyp, cache_images=True,
                                         kp_flip=kp_flip)
 
-    xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores, start_method='fork')  # fork to save memory
+    xmp.spawn(_mp_fn, args=(opt, model, hyp), nprocs=opt.tpu_cores, start_method='fork')  # fork to save memory
