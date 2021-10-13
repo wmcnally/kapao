@@ -102,7 +102,7 @@ def _mp_fn(index, opt, train_dataset):
         #     collate_fn=LoadImagesAndLabels.collate_fn)
 
         train_loader = InfiniteDataLoader(
-            train_dataset,
+            TRAIN_DATASET,
             batch_size=opt.batch_size // WORLD_SIZE,
             num_workers=opt.workers,
             sampler=train_sampler,
@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
     # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
     #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
-    train_dataset = KeypointDataset(train_path, workers=os.cpu_count())
+    TRAIN_DATASET = KeypointDataset(train_path, workers=os.cpu_count())
 
     # data_dict = check_dataset(opt.data)
     # train_path = data_dict['train']
@@ -155,4 +155,4 @@ if __name__ == '__main__':
     #     cv2.waitKey(0)
     #     cv2.destroyAllWindows()
     #     # print(.shape)
-    xmp.spawn(_mp_fn, args=(opt, train_dataset,), nprocs=opt.tpu_cores)
+    xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores, start_method='fork')
