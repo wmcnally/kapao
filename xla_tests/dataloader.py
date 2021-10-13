@@ -46,7 +46,8 @@ def _mp_fn(index, opt):
         sampler=train_sampler,
         drop_last=True,
         shuffle=False if train_sampler else True,
-        num_workers=opt.workers)
+        num_workers=opt.workers,
+        collate_fn=LoadImagesAndLabels.collate_fn)
 
     # train_loader = InfiniteDataLoader(
     #     train_dataset,
