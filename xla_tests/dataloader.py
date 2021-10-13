@@ -116,6 +116,7 @@ def _mp_fn(index, opt, train_dataset):
         if i == 500:
             break
         xm.master_print(i, imgs.shape)
+        xm.mark_step()
     tf = time.time()
     xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
 
@@ -131,6 +132,7 @@ if __name__ == '__main__':
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--fake-data', action='store_true')
     parser.add_argument('--mnist', action='store_true')
+
     opt = parser.parse_args()
 
     with open(opt.hyp) as f:
