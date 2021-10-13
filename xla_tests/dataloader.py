@@ -40,23 +40,22 @@ def _mp_fn(index, opt):
             rank=RANK,
             shuffle=True)
 
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        batch_size=opt.batch_size // WORLD_SIZE,
-        sampler=train_sampler,
-        drop_last=True,
-        shuffle=False if train_sampler else True,
-        num_workers=opt.workers,
-        collate_fn=LoadImagesAndLabels.collate_fn)
-
-    # train_loader = InfiniteDataLoader(
+    # train_loader = torch.utils.data.DataLoader(
     #     train_dataset,
     #     batch_size=opt.batch_size // WORLD_SIZE,
-    #     num_workers=opt.workers,
     #     sampler=train_sampler,
-    #     pin_memory=True,
-    #     collate_fn=LoadImagesAndLabels.collate_fn
-    # )
+    #     drop_last=True,
+    #     shuffle=False if train_sampler else True,
+    #     num_workers=opt.workers,
+    #     collate_fn=LoadImagesAndLabels.collate_fn)
+
+    train_loader = InfiniteDataLoader(
+        train_dataset,
+        batch_size=opt.batch_size // WORLD_SIZE,
+        num_workers=opt.workers,
+        sampler=train_sampler,
+        collate_fn=LoadImagesAndLabels.collate_fn
+    )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
 
