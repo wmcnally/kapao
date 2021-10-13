@@ -6,20 +6,55 @@ sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
 
 # from models.yolo import Model
 import torch
+from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 import time
 import argparse
 from utils.datasets import create_dataloader, InfiniteDataLoader, check_dataset, LoadImagesAndLabels
+from utils.augmentations import letterbox
 import yaml
 import sys
 import os, os.path as osp
+import cv2
 
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
 import torch_xla.utils.utils as xu
 
-from contextlib import contextmanager
+
+class KeypointDataset(Dataset):
+    def __init__(self, path, img_size=640, augment=False):
+        self.img_size = img_size
+        self.augment = augment
+
+        with open(path, 'r') as t:
+            self.img_files = t.read().strip().splitlines()
+
+    def __len__(self):
+        return len(self.img_files)
+
+    def __getitem__(self, index):
+        img_path = self.img_files[index]
+
+        # read image
+        im, (h0, w0), (h, w) = self.load_image(img_path)
+
+        # load labels
+        labels_path = (osp.splitext(img_path)[0] + '.txt').replace('images', 'labels')
+
+        return im
+
+    def load_image(self, img_path):
+        im = cv2.imread(img_path)  # BGR
+        assert im is not None, 'Image Not Found ' + img_path
+        h0, w0 = im.shape[:2]  # orig hw
+        r = self.img_size / max(h0, w0)  # ratio
+        if r != 1:  # if sizes are not equal
+            im = cv2.resize(im, (int(w0 * r), int(h0 * r)),
+                            interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
+        im, ratio, pad = letterbox(im, self.img_size, auto=False, scaleup=self.augment)
+        return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
 
 
 def _mp_fn(index, opt):
@@ -52,8 +87,9 @@ def _mp_fn(index, opt):
                     [transforms.ToTensor(),
                      transforms.Normalize((0.1307,), (0.3081,))]))
         else:
-            train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
-                                                hyp=hyp, kp_flip=data_dict['kp_flip'])
+            # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
+            #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
+            train_dataset = KeypointDataset(train_path, opt.img_size)
 
         train_sampler = None
         if WORLD_SIZE > 1:
@@ -104,4 +140,14 @@ if __name__ == '__main__':
     parser.add_argument('--mnist', action='store_true')
     opt = parser.parse_args()
 
+    # data_dict = check_dataset(opt.data)
+    # train_path = data_dict['train']
+    #
+    # ds = KeypointDataset(train_path)
+    # for i in range(10):
+    #     img = ds.__getitem__(i)
+    #     cv2.imshow('', img)
+    #     cv2.waitKey(0)
+    #     cv2.destroyAllWindows()
+    #     # print(.shape)
     xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores)
