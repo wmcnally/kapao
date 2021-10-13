@@ -144,9 +144,9 @@ if __name__ == '__main__':
     # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
     #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
 
-    # load datasets in global scope instead of in each process
+    # load datasets in global scope instead of in each process, cache into VM memory
     TRAIN_DATASET = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
-                                        hyp=hyp, kp_flip=data_dict['kp_flip'])
+                                        hyp=hyp, kp_flip=data_dict['kp_flip'], cache_images=True)
 
     # data_dict = check_dataset(opt.data)
     # train_path = data_dict['train']
