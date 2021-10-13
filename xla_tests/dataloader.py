@@ -4,19 +4,22 @@ from pathlib import Path
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[1].as_posix())  # add yolov5/ to path
 
-from models.yolo import Model
+# from models.yolo import Model
 import torch
+from torchvision import datasets, transforms
 import time
 import argparse
 from utils.datasets import create_dataloader, InfiniteDataLoader, check_dataset, LoadImagesAndLabels
-from utils.torch_utils import torch_distributed_zero_first
 import yaml
 import sys
+import os, os.path as osp
 
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
 import torch_xla.utils.utils as xu
+
+from contextlib import contextmanager
 
 
 def _mp_fn(index, opt):
@@ -40,7 +43,15 @@ def _mp_fn(index, opt):
                   torch.zeros(opt.batch_size // WORLD_SIZE, dtype=torch.int64)),
             sample_count=train_dataset_len // opt.batch_size)
     else:
-        with torch_distributed_zero_first(RANK):
+        if opt.mnist:
+            train_dataset = datasets.MNIST(
+                osp.join('data/datasets/mnist', str(xm.get_ordinal())),
+                train=True,
+                download=True,
+                transform=transforms.Compose(
+                    [transforms.ToTensor(),
+                     transforms.Normalize((0.1307,), (0.3081,))]))
+        else:
             train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
                                                 hyp=hyp, kp_flip=data_dict['kp_flip'])
 
@@ -66,20 +77,18 @@ def _mp_fn(index, opt):
             batch_size=opt.batch_size // WORLD_SIZE,
             num_workers=opt.workers,
             sampler=train_sampler,
-            pin_memory=True,
             collate_fn=LoadImagesAndLabels.collate_fn
         )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
 
     ti = time.time()
-    for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
+    for i, (imgs, targets) in enumerate(train_device_loader):
         if i == 100:
             break
         xm.master_print(i, imgs.shape)
     tf = time.time()
     xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
-
 
 
 if __name__ == '__main__':
@@ -92,6 +101,7 @@ if __name__ == '__main__':
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     parser.add_argument('--fake-data', action='store_true')
+    parser.add_argument('--mnist', action='store_true')
     opt = parser.parse_args()
 
     xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores)
