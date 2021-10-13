@@ -87,9 +87,9 @@ def _mp_fn(index, opt):
                     [transforms.ToTensor(),
                      transforms.Normalize((0.1307,), (0.3081,))]))
         else:
-            # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
-            #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
-            train_dataset = KeypointDataset(train_path, opt.imgsz)
+            train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
+                                                hyp=hyp, kp_flip=data_dict['kp_flip'])
+            # train_dataset = KeypointDataset(train_path, opt.imgsz)
 
         train_sampler = None
         if WORLD_SIZE > 1:
@@ -113,14 +113,14 @@ def _mp_fn(index, opt):
             batch_size=opt.batch_size // WORLD_SIZE,
             num_workers=opt.workers,
             sampler=train_sampler,
-            # collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
-            collate_fn=None
+            collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
+            # collate_fn=None
         )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
 
     ti = time.time()
-    for i, (imgs, targets) in enumerate(train_device_loader):
+    for i, (imgs, *targets) in enumerate(train_device_loader):
         if i == 100:
             break
         xm.master_print(i, imgs.shape)
