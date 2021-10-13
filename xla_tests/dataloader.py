@@ -63,6 +63,7 @@ def _mp_fn(index, opt):
     for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
         if i == 100:
             break
+        xm.add_step_closure(lambda x: print(x.shape), args=(imgs,))
         xm.master_print(i, imgs.shape)
     tf = time.time()
     xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
