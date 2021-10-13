@@ -77,7 +77,7 @@ def _mp_fn(index, opt):
             batch_size=opt.batch_size // WORLD_SIZE,
             num_workers=opt.workers,
             sampler=train_sampler,
-            collate_fn=LoadImagesAndLabels.collate_fn
+            collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
         )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
