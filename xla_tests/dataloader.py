@@ -63,9 +63,9 @@ def _mp_fn(index, opt):
     for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
         if i == 100:
             break
-        print(i, imgs.shape)
+        xm.master_print(i, imgs.shape)
     tf = time.time()
-    print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
+    xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
 
 
 if __name__ == '__main__':
