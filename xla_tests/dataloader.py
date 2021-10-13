@@ -15,6 +15,7 @@ import sys
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.utils.utils as xu
 
 
 def _mp_fn(index, opt):
@@ -29,33 +30,42 @@ def _mp_fn(index, opt):
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
 
-    train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
-                                        hyp=hyp, kp_flip=data_dict['kp_flip'])
+    if opt.fake_data:
+        train_dataset_len = 120000  # Roughly the size of COCO dataset.
+        train_loader = xu.SampleGenerator(
+            data=(torch.zeros(opt.batch_size // WORLD_SIZE, 3, opt.imgsz, opt.imgsz),
+                  torch.zeros(opt.batch_size // WORLD_SIZE, dtype=torch.int64),
+                  torch.zeros(opt.batch_size // WORLD_SIZE, dtype=torch.int64),
+                  torch.zeros(opt.batch_size // WORLD_SIZE, dtype=torch.int64)),
+            sample_count=train_dataset_len // opt.batch_size)
+    else:
+        train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
+                                            hyp=hyp, kp_flip=data_dict['kp_flip'])
 
-    train_sampler = None
-    if WORLD_SIZE > 1:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(
+        train_sampler = None
+        if WORLD_SIZE > 1:
+            train_sampler = torch.utils.data.distributed.DistributedSampler(
+                train_dataset,
+                num_replicas=WORLD_SIZE,
+                rank=RANK,
+                shuffle=True)
+
+        # train_loader = torch.utils.data.DataLoader(
+        #     train_dataset,
+        #     batch_size=opt.batch_size // WORLD_SIZE,
+        #     sampler=train_sampler,
+        #     drop_last=True,
+        #     shuffle=False if train_sampler else True,
+        #     num_workers=opt.workers,
+        #     collate_fn=LoadImagesAndLabels.collate_fn)
+
+        train_loader = InfiniteDataLoader(
             train_dataset,
-            num_replicas=WORLD_SIZE,
-            rank=RANK,
-            shuffle=True)
-
-    # train_loader = torch.utils.data.DataLoader(
-    #     train_dataset,
-    #     batch_size=opt.batch_size // WORLD_SIZE,
-    #     sampler=train_sampler,
-    #     drop_last=True,
-    #     shuffle=False if train_sampler else True,
-    #     num_workers=opt.workers,
-    #     collate_fn=LoadImagesAndLabels.collate_fn)
-
-    train_loader = InfiniteDataLoader(
-        train_dataset,
-        batch_size=opt.batch_size // WORLD_SIZE,
-        num_workers=opt.workers,
-        sampler=train_sampler,
-        collate_fn=LoadImagesAndLabels.collate_fn
-    )
+            batch_size=opt.batch_size // WORLD_SIZE,
+            num_workers=opt.workers,
+            sampler=train_sampler,
+            collate_fn=LoadImagesAndLabels.collate_fn
+        )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
 
@@ -77,6 +87,7 @@ if __name__ == '__main__':
     parser.add_argument('--tpu-cores', type=int, default=1)
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
+    parser.add_argument('--fake-data', action='store_true')
     opt = parser.parse_args()
 
     xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores)
