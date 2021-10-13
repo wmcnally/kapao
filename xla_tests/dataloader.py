@@ -60,7 +60,7 @@ class KeypointDataset(Dataset):
         return img, 0
 
 
-def _mp_fn(index, opt, train_dataset):
+def _mp_fn(index, opt):
     device = xm.xla_device()
 
     WORLD_SIZE = xm.xrt_world_size()
