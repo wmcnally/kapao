@@ -105,8 +105,8 @@ def _mp_fn(index, opt, train_dataset):
             batch_size=opt.batch_size // WORLD_SIZE,
             num_workers=opt.workers,
             sampler=train_sampler,
-            collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
-            # collate_fn=None
+            # collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
+            collate_fn=None
         )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
@@ -116,7 +116,6 @@ def _mp_fn(index, opt, train_dataset):
         if i == 500:
             break
         xm.master_print(i, imgs.shape)
-        xm.mark_step()
     tf = time.time()
     xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
 
@@ -141,8 +140,9 @@ if __name__ == '__main__':
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
 
-    train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
-                                        hyp=hyp, kp_flip=data_dict['kp_flip'])
+    # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
+    #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
+    train_dataset = KeypointDataset(train_path)
 
     # data_dict = check_dataset(opt.data)
     # train_path = data_dict['train']
