@@ -106,8 +106,8 @@ def _mp_fn(index, opt):
             batch_size=opt.batch_size // WORLD_SIZE,
             num_workers=opt.workers,
             sampler=train_sampler,
-            # collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
-            collate_fn=None
+            collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
+            # collate_fn=None
         )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
@@ -143,7 +143,10 @@ if __name__ == '__main__':
 
     # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
     #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
-    TRAIN_DATASET = KeypointDataset(train_path, workers=os.cpu_count())
+
+    # load datasets in global scope instead of in each process
+    TRAIN_DATASET = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
+                                        hyp=hyp, kp_flip=data_dict['kp_flip'])
 
     # data_dict = check_dataset(opt.data)
     # train_path = data_dict['train']
