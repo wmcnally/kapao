@@ -9,6 +9,7 @@ import torch
 import time
 import argparse
 from utils.datasets import create_dataloader, InfiniteDataLoader, check_dataset, LoadImagesAndLabels
+from utils.torch_utils import torch_distributed_zero_first
 import yaml
 import sys
 
@@ -39,8 +40,9 @@ def _mp_fn(index, opt):
                   torch.zeros(opt.batch_size // WORLD_SIZE, dtype=torch.int64)),
             sample_count=train_dataset_len // opt.batch_size)
     else:
-        train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
-                                            hyp=hyp, kp_flip=data_dict['kp_flip'])
+        with torch_distributed_zero_first(RANK):
+            train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
+                                                hyp=hyp, kp_flip=data_dict['kp_flip'])
 
         train_sampler = None
         if WORLD_SIZE > 1:
@@ -64,6 +66,7 @@ def _mp_fn(index, opt):
             batch_size=opt.batch_size // WORLD_SIZE,
             num_workers=opt.workers,
             sampler=train_sampler,
+            pin_memory=True,
             collate_fn=LoadImagesAndLabels.collate_fn
         )
 
@@ -76,6 +79,7 @@ def _mp_fn(index, opt):
         xm.master_print(i, imgs.shape)
     tf = time.time()
     xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
+
 
 
 if __name__ == '__main__':
