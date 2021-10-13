@@ -43,7 +43,7 @@ class KeypointDataset(Dataset):
         for i, x in pbar:
             self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
             gb += self.imgs[i].nbytes
-            pbar.desc = 'Caching images {}/{} ({:.1f} GB)'.format(i + 1, n, gb / 1E9)
+            pbar.desc = 'Caching images ({:.1f} GB)'.format(gb / 1E9)
         pbar.close()
 
     def __len__(self):
@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
     # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
     #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
-    train_dataset = KeypointDataset(train_path)
+    train_dataset = KeypointDataset(train_path, workers=opt.workers)
 
     # data_dict = check_dataset(opt.data)
     # train_path = data_dict['train']
