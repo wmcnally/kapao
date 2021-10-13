@@ -10,12 +10,15 @@ from torch.utils.data import Dataset
 from torchvision import datasets, transforms
 import time
 import argparse
-from utils.datasets import create_dataloader, InfiniteDataLoader, check_dataset, LoadImagesAndLabels
+from utils.datasets import create_dataloader, InfiniteDataLoader, check_dataset, LoadImagesAndLabels, load_image
 from utils.augmentations import letterbox
 import yaml
 import sys
 import os, os.path as osp
 import cv2
+from tqdm import tqdm
+from multiprocessing.pool import ThreadPool
+from itertools import repeat
 
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
@@ -24,50 +27,43 @@ import torch_xla.utils.utils as xu
 
 
 class KeypointDataset(Dataset):
-    def __init__(self, path, img_size=640, augment=False):
+    def __init__(self, path, img_size=640, augment=False, workers=12):
         self.img_size = img_size
+        self.workers = workers
         self.augment = augment
-
         with open(path, 'r') as t:
             self.img_files = t.read().strip().splitlines()
+        n = len(self.img_files)
+
+        # cache images into memory
+        self.imgs, self.img_npy, self.img_hw0, self.img_hw = [None] * n, [None] * n, [None] * n, [None] * n
+        results = ThreadPool(self.workers).imap(lambda x: load_image(*x), zip(repeat(self), range(n)))
+        gb = 0
+        pbar = tqdm(enumerate(results), total=n)
+        for i, x in pbar:
+            self.imgs[i], self.img_hw0[i], self.img_hw[i] = x  # im, hw_orig, hw_resized = load_image(self, i)
+            gb += self.imgs[i].nbytes
+            pbar.desc = 'Caching images {}/{} ({:.1f} GB)'.format(i + 1, n, gb / 1E9)
+        pbar.close()
 
     def __len__(self):
         return len(self.img_files)
 
     def __getitem__(self, index):
-        img_path = self.img_files[index]
-
         # read image
-        im, (h0, w0), (h, w) = self.load_image(img_path)
+        im, (h0, w0), (h, w) = load_image(self, index)
 
         # load labels
-        labels_path = (osp.splitext(img_path)[0] + '.txt').replace('images', 'labels')
+        # labels_path = (osp.splitext(img_path)[0] + '.txt').replace('images', 'labels')
 
         return im, 0
 
-    def load_image(self, img_path):
-        im = cv2.imread(img_path)  # BGR
-        assert im is not None, 'Image Not Found ' + img_path
-        h0, w0 = im.shape[:2]  # orig hw
-        r = self.img_size / max(h0, w0)  # ratio
-        if r != 1:  # if sizes are not equal
-            im = cv2.resize(im, (int(w0 * r), int(h0 * r)),
-                            interpolation=cv2.INTER_AREA if r < 1 and not self.augment else cv2.INTER_LINEAR)
-        im, ratio, pad = letterbox(im, self.img_size, auto=False, scaleup=self.augment)
-        return im, (h0, w0), im.shape[:2]  # im, hw_original, hw_resized
 
-
-def _mp_fn(index, opt):
+def _mp_fn(index, opt, train_dataset):
     device = xm.xla_device()
 
     WORLD_SIZE = xm.xrt_world_size()
     RANK = xm.get_ordinal()
-
-    with open(opt.hyp) as f:
-        hyp = yaml.safe_load(f)  # load hyps dict
-
-    data_dict = check_dataset(opt.data)
-    train_path = data_dict['train']
 
     if opt.fake_data:
         train_dataset_len = 120000  # Roughly the size of COCO dataset.
@@ -86,10 +82,6 @@ def _mp_fn(index, opt):
                 transform=transforms.Compose(
                     [transforms.ToTensor(),
                      transforms.Normalize((0.1307,), (0.3081,))]))
-        else:
-            train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
-                                                hyp=hyp, kp_flip=data_dict['kp_flip'])
-            # train_dataset = KeypointDataset(train_path, opt.imgsz)
 
         train_sampler = None
         if WORLD_SIZE > 1:
@@ -141,6 +133,15 @@ if __name__ == '__main__':
     parser.add_argument('--mnist', action='store_true')
     opt = parser.parse_args()
 
+    with open(opt.hyp) as f:
+        hyp = yaml.safe_load(f)  # load hyps dict
+
+    data_dict = check_dataset(opt.data)
+    train_path = data_dict['train']
+
+    train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
+                                        hyp=hyp, kp_flip=data_dict['kp_flip'])
+
     # data_dict = check_dataset(opt.data)
     # train_path = data_dict['train']
     #
@@ -151,4 +152,4 @@ if __name__ == '__main__':
     #     cv2.waitKey(0)
     #     cv2.destroyAllWindows()
     #     # print(.shape)
-    xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores)
+    xmp.spawn(_mp_fn, args=(opt, train_dataset,), nprocs=opt.tpu_cores)
