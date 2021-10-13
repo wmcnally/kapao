@@ -228,9 +228,11 @@ def parse_opt():
     parser.add_argument('--conf-thres-kp-person', type=float, default=0.2)
     parser.add_argument('--iou-thres-kp', type=float, default=0.45)
     parser.add_argument('--overwrite-tol', type=int, default=50)
-    parser.add_argument('--augment', action='store_true', help='augmented inference')
+    parser.add_argument('--scales', type=float, nargs='+', default=[0.5, 1, 2])
+    parser.add_argument('--flips', type=int, nargs='+', default=[-1, 3, -1])
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
+    opt.flips = [None if f == -1 else f for f in opt.flips]
     opt.data = check_file(opt.data)  # check file
     return opt
 
