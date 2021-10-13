@@ -87,7 +87,7 @@ def _mp_fn(index, opt):
         train_sampler = None
         if WORLD_SIZE > 1:
             train_sampler = torch.utils.data.distributed.DistributedSampler(
-                train_dataset,
+                TRAIN_DATASET,
                 num_replicas=WORLD_SIZE,
                 rank=RANK,
                 shuffle=True)
