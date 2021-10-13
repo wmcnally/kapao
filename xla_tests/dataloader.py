@@ -51,12 +51,13 @@ class KeypointDataset(Dataset):
 
     def __getitem__(self, index):
         # read image
-        im, (h0, w0), (h, w) = load_image(self, index)
+        img, (h0, w0), (h, w) = load_image(self, index)
+        img, ratio, pad = letterbox(img, self.img_size, auto=False, scaleup=self.augment)
 
         # load labels
         # labels_path = (osp.splitext(img_path)[0] + '.txt').replace('images', 'labels')
 
-        return im, 0
+        return img, 0
 
 
 def _mp_fn(index, opt, train_dataset):
