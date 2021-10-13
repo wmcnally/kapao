@@ -107,7 +107,6 @@ def _mp_fn(index, opt):
             num_workers=opt.workers,
             sampler=train_sampler,
             collate_fn=None if opt.mnist else LoadImagesAndLabels.collate_fn
-            # collate_fn=None
         )
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
@@ -141,21 +140,8 @@ if __name__ == '__main__':
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
 
-    # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
-    #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
-
-    # load datasets in global scope instead of in each process, cache into VM memory
+    # load dataset globally, cache into VM memory
     TRAIN_DATASET = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
                                         hyp=hyp, kp_flip=data_dict['kp_flip'], cache_images=True)
 
-    # data_dict = check_dataset(opt.data)
-    # train_path = data_dict['train']
-    #
-    # ds = KeypointDataset(train_path)
-    # for i in range(10):
-    #     img = ds.__getitem__(i)
-    #     cv2.imshow('', img)
-    #     cv2.waitKey(0)
-    #     cv2.destroyAllWindows()
-    #     # print(.shape)
-    xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores, start_method='fork')
+    xmp.spawn(_mp_fn, args=(opt,), nprocs=opt.tpu_cores, start_method='fork')  # fork to save memory
