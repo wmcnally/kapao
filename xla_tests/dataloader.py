@@ -89,7 +89,7 @@ def _mp_fn(index, opt):
         else:
             # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // WORLD_SIZE,
             #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
-            train_dataset = KeypointDataset(train_path, opt.img_size)
+            train_dataset = KeypointDataset(train_path, opt.imgsz)
 
         train_sampler = None
         if WORLD_SIZE > 1:
