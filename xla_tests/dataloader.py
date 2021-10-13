@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
     # train_dataset = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
     #                                     hyp=hyp, kp_flip=data_dict['kp_flip'])
-    train_dataset = KeypointDataset(train_path, workers=opt.workers)
+    train_dataset = KeypointDataset(train_path, workers=os.cpu_count())
 
     # data_dict = check_dataset(opt.data)
     # train_path = data_dict['train']
