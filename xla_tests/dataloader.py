@@ -121,7 +121,7 @@ def _mp_fn(index, opt):
 
     ti = time.time()
     for i, (imgs, *targets) in enumerate(train_device_loader):
-        if i == 100:
+        if i == 500:
             break
         xm.master_print(i, imgs.shape)
     tf = time.time()
