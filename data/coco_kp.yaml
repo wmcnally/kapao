@@ -3,9 +3,10 @@
 path: data/datasets/coco
 train: train2017.txt
 val: val2017.txt
+annotations_prefix: annotations/person_keypoints_
 
 # number of classes
-nc: 18
+nc: 18  # person class + 17 keypoint classes
 
 # number of keypoint coordinates (x, y)
 num_coords: 34
