@@ -63,7 +63,6 @@ def _mp_fn(index, opt):
     for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
         if i == 100:
             break
-        xm.add_step_closure(lambda x: print(x.shape), args=(imgs,))
         xm.master_print(i, imgs.shape)
     tf = time.time()
     xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
@@ -76,7 +75,7 @@ if __name__ == '__main__':
     parser.add_argument('--batch-size', type=int, default=64, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--tpu-cores', type=int, default=1)
-    parser.add_argument('--workers', type=int, default=96, help='maximum number of dataloader workers')
+    parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
     parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
     opt = parser.parse_args()
 
