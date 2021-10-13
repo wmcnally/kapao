@@ -31,7 +31,15 @@ import torch_xla.utils.utils as xu
 
 def _mp_fn(index, opt):
     device = xm.xla_device()
-    WRAPPED_MODEL.to(device)
+
+    with open(opt.hyp) as f:
+        hyp = yaml.safe_load(f)  # load hyps dict
+
+    data_dict = check_dataset(opt.data)
+    num_coords = data_dict['num_coords'] if 'num_coords' in data_dict.keys() else 0
+    nc = int(data_dict['nc'])  # number of classes
+
+    model = Model('models/yolov5s.yaml', ch=3, nc=nc, anchors=hyp.get('anchors'), num_coords=num_coords).to(device)
 
     WORLD_SIZE = xm.xrt_world_size()
     RANK = xm.get_ordinal()
@@ -54,17 +62,17 @@ def _mp_fn(index, opt):
 
     train_device_loader = pl.MpDeviceLoader(train_loader, device)
 
-    optimizer = SGD(WRAPPED_MODEL.parameters(), lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
+    optimizer = SGD(model.parameters(), lr=hyp['lr0'], momentum=hyp['momentum'], nesterov=True)
     compute_loss = ComputeLoss(model, num_coords=num_coords)
 
-    WRAPPED_MODEL.train()
+    model.train()
     ti = time.time()
     for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
         optimizer.zero_grad()
         if i == 10:
             break
         imgs = imgs.to(device, non_blocking=True).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
-        output = WRAPPED_MODEL(imgs)  # forward
+        output = model(imgs)  # forward
         loss, loss_items = compute_loss(output, targets.to(device))  # loss scaled by batch_size
         loss.backward()
         xm.optimizer_step(optimizer)
@@ -81,9 +89,6 @@ if __name__ == '__main__':
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
     parser.add_argument('--tpu-cores', type=int, default=1)
     parser.add_argument('--workers', type=int, default=8, help='maximum number of dataloader workers')
-    parser.add_argument('--cache', type=str, nargs='?', const='ram', help='--cache images in "ram" (default) or "disk"')
-    parser.add_argument('--fake-data', action='store_true')
-    parser.add_argument('--mnist', action='store_true')
 
     opt = parser.parse_args()
 
@@ -92,13 +97,7 @@ if __name__ == '__main__':
 
     data_dict = check_dataset(opt.data)
     train_path = data_dict['train']
-
     kp_flip = data_dict['kp_flip'] if 'kp_flip' in data_dict.keys() else None
-    num_coords = data_dict['num_coords'] if 'num_coords' in data_dict.keys() else 0
-    nc = int(data_dict['nc'])  # number of classes
-
-    model = Model('models/yolov5s.yaml', ch=3, nc=nc, anchors=hyp.get('anchors'), num_coords=num_coords)
-    WRAPPED_MODEL = xmp.MpModelWrapper(model)
 
     # load dataset globally, cache into VM memory
     TRAIN_DATASET = LoadImagesAndLabels(train_path, opt.imgsz, opt.batch_size // opt.tpu_cores,
