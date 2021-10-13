@@ -43,7 +43,7 @@ class KeypointDataset(Dataset):
         # load labels
         labels_path = (osp.splitext(img_path)[0] + '.txt').replace('images', 'labels')
 
-        return im
+        return im, 0
 
     def load_image(self, img_path):
         im = cv2.imread(img_path)  # BGR
