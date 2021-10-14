@@ -64,7 +64,7 @@ def _mp_fn(index, opt, model, hyp):
         if i == 10:
             break
         xm.master_print(i, imgs[0, 0])
-        imgs = (imgs.float() / 255.0).to(device) # uint8 to float32, 0-255 to 0.0-1.0
+        imgs = (imgs.float() / 255.0)  # uint8 to float32, 0-255 to 0.0-1.0
         output = model(imgs)  # forward
         # loss, loss_items = compute_loss(output, targets.to(device))  # loss scaled by batch_size
         # loss.backward()
