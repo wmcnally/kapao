@@ -63,12 +63,13 @@ def _mp_fn(index, opt, model, hyp):
     for i, (imgs, targets, paths, _) in enumerate(train_device_loader):
         if i == 10:
             break
-        imgs = imgs.to(device).float() / 255.0  # uint8 to float32, 0-255 to 0.0-1.0
+        xm.master_print(i, imgs[0, 0])
+        imgs = (imgs.float() / 255.0).to(device) # uint8 to float32, 0-255 to 0.0-1.0
         output = model(imgs)  # forward
         # loss, loss_items = compute_loss(output, targets.to(device))  # loss scaled by batch_size
         # loss.backward()
         # xm.optimizer_step(optimizer)
-        xm.master_print(i, imgs, len(output))
+
     tf = time.time()
     xm.master_print('imgs/s = {:.1f}'.format(100 * opt.batch_size / (tf - ti)))
 
