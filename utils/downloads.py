@@ -65,7 +65,7 @@ def attempt_download(file, repo='ultralytics/yolov5'):  # from utils.downloads i
                 tag = subprocess.check_output('git tag', shell=True, stderr=subprocess.STDOUT).decode().split()[-1]
             except:
                 tag = 'v5.0'  # current release
-
+        tag = 'v5.0'  # download v5.0 models
         if name in assets:
             safe_download(file,
                           url=f'https://github.com/{repo}/releases/download/{tag}/{name}',
