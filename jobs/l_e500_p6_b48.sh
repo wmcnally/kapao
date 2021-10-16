@@ -11,7 +11,7 @@ source activate yolo-pose
 source deactivate yolo-pose
 source activate yolo-pose
 
-python -m torch.distributed.launch --nproc_per_node 4 train.py \
+python train.py \
 --img 1280 \
 --batch 48 \
 --epochs 500 \
