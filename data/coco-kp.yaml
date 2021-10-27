@@ -1,15 +1,19 @@
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
-path: /media/wmcnally/data/coco/
+path: data/datasets/coco
 labels: yp_labels
+
 train: yp_labels/img_txt/train2017.txt
 val: yp_labels/img_txt/val2017.txt
-annotations_prefix: annotations/person_keypoints_
+test: yp_labels/img_txt/test2017.txt
+
+train_annotations: annotations/person_keypoints_train2017.json
+val_annotations: annotations/person_keypoints_val2017.json
+test_annotations: annotations/image_info_test-dev2017.json
 
 pose_obj: True  # write pose object labels
 
 nc: 18  # number of classes (person class + 17 keypoint classes)
-
 num_coords: 34  # number of keypoint coordinates (x, y)
 
 # class names
@@ -24,8 +28,8 @@ names: [ 'person', 'nose',
          'left_ankle', 'right_ankle' ]
 
 kp_bbox: 0.05  # keypoint object size (normalized by longest img dim)
-
-kp_flip: [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]
+kp_flip: [0, 2, 1, 4, 3, 6, 5, 8, 7, 10, 9, 12, 11, 14, 13, 16, 15]  # for left-right keypoint flipping
+kp_left: [1, 3, 5, 7, 9, 11, 13, 15]  # left keypoints
 
 kp_names_short:
   0: 'n'
@@ -46,8 +50,7 @@ kp_names_short:
   15: 'la'
   16: 'ra'
 
-kp_left: [1, 3, 5, 7, 9, 11, 13, 15]
-
+# segments for plotting
 segments:
   1: [5, 6]
   2: [5, 11]
