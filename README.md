@@ -26,7 +26,8 @@ Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`
 YOLOPose-S (62.4 AP): `$ python val.py --weights yolopose_s.pt --imgsz 1280`
 
 ### Validation (with TTA)
-YOLOPose-S (63.8 AP): `$ python val.py --weights yolopose_s.pt --imgsz 1280  --scales 0.8 1 1.2 --flips -1 3 -1` 
+YOLOPose-S (63.8 AP): `$ python val.py --weights yolopose_s.pt --imgsz 1280 \ `<br>
+`--scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ### Training
 The following commands were used to train the YOLOPose models on 4xV100s (32GB memory each).
