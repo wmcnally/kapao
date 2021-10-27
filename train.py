@@ -1,11 +1,3 @@
-# YOLOv5 🚀 by Ultralytics, GPL-3.0 license
-"""
-Train a YOLOv5 model on a custom dataset
-
-Usage:
-    $ python path/to/train.py --data coco128.yaml --weights yolov5s.pt --img 640
-"""
-
 import argparse
 import logging
 import math
@@ -29,21 +21,18 @@ from tqdm import tqdm
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
 
-import val  # for end-of-epoch mAP
-import val_kp
-from models.experimental import attempt_load
+import val
 from models.yolo import Model
 from utils.autoanchor import check_anchors
 from utils.datasets import create_dataloader
 from utils.general import labels_to_class_weights, increment_path, labels_to_image_weights, init_seeds, \
-    strip_optimizer, get_latest_run, check_dataset, check_file, check_git_status, check_img_size, \
-    check_requirements, print_mutation, set_logging, one_cycle, colorstr, methods
+    strip_optimizer, get_latest_run, check_dataset, check_file, check_img_size, \
+    print_mutation, set_logging, one_cycle, colorstr, methods
 from utils.downloads import attempt_download
 from utils.loss import ComputeLoss
 from utils.plots import plot_labels, plot_evolve
 from utils.torch_utils import EarlyStopping, ModelEMA, de_parallel, intersect_dicts, select_device, \
     torch_distributed_zero_first
-from utils.loggers.wandb.wandb_utils import check_wandb_resume
 from utils.metrics import fitness
 from utils.loggers import Loggers
 from utils.callbacks import Callbacks
@@ -65,8 +54,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         opt.resume, opt.noval, opt.nosave, opt.workers, opt.freeze, opt.val_scales, opt.val_flips
 
     val_flips = [None if f == -1 else f for f in val_flips]
-    # val_scales = [0.5, 1, 2]
-    # val_flips = [None, 3, None]
 
     # Directories
     w = save_dir / 'weights'  # weights dir
@@ -110,8 +97,10 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     assert len(names) == nc, f'{len(names)} names found for nc={nc} dataset in {data}'  # check
     is_coco = data.endswith('coco.yaml') and nc == 80  # COCO dataset
 
-    kp_flip = data_dict['kp_flip'] if 'kp_flip' in data_dict.keys() else None
-    num_coords = data_dict['num_coords'] if 'num_coords' in data_dict.keys() else 0
+    labels_dir = data_dict.get('labels', 'labels')
+    kp_flip = data_dict.get('kp_flip')
+    kp_bbox = data_dict.get('kp_bbox')
+    num_coords = data_dict.get('num_coords', 0)
 
     # Model
     pretrained = weights.endswith('.pt')
@@ -212,20 +201,20 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
         LOGGER.info('Using SyncBatchNorm()')
 
     # Trainloader
-    train_loader, dataset = create_dataloader(train_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
+    train_loader, dataset = create_dataloader(train_path, labels_dir, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
                                               hyp=hyp, augment=True, cache=opt.cache, rect=opt.rect, rank=RANK,
                                               workers=workers, image_weights=opt.image_weights, quad=opt.quad,
-                                              prefix=colorstr('train: '), kp_flip=kp_flip)
+                                              prefix=colorstr('train: '), kp_flip=kp_flip, kp_bbox=kp_bbox)
     mlc = int(np.concatenate(dataset.labels, 0)[:, 0].max())  # max label class
     nb = len(train_loader)  # number of batches
     assert mlc < nc, f'Label class {mlc} exceeds nc={nc} in {data}. Possible class labels are 0-{nc - 1}'
 
     # Process 0
     if RANK in [-1, 0]:
-        val_loader = create_dataloader(val_path, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
+        val_loader = create_dataloader(val_path, labels_dir, imgsz, batch_size // WORLD_SIZE, gs, single_cls,
                                        hyp=hyp, cache=None if noval else opt.cache, rect=False, rank=-1,
                                        workers=workers, pad=0.5,
-                                       prefix=colorstr('val: '), kp_flip=kp_flip)[0]
+                                       prefix=colorstr('val: '), kp_flip=kp_flip, kp_bbox=kp_bbox)[0]
 
         if not resume:
             # labels = np.concatenate(dataset.labels, 0)
@@ -357,7 +346,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
             ema.update_attr(model, include=['yaml', 'nc', 'hyp', 'names', 'stride', 'class_weights'])
             final_epoch = (epoch + 1 == epochs) or stopper.possible_stop
             if not noval or final_epoch:  # Calculate mAP
-                results, maps, _ = val_kp.run(data_dict,
+                results, maps, _ = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE,
                                            imgsz=imgsz,
                                            model=ema.ema,
@@ -424,8 +413,8 @@ def parse_opt(known=False):
     parser = argparse.ArgumentParser()
     parser.add_argument('--weights', type=str, default='yolov5s.pt', help='initial weights path')
     parser.add_argument('--cfg', type=str, default='', help='model.yaml path')
-    parser.add_argument('--data', type=str, default='data/coco128.yaml', help='dataset.yaml path')
-    parser.add_argument('--hyp', type=str, default='data/hyps/hyp.scratch.yaml', help='hyperparameters path')
+    parser.add_argument('--data', type=str, default='data/coco-kp.yaml', help='dataset.yaml path')
+    parser.add_argument('--hyp', type=str, default='data/hyps/hyp.kp.yaml', help='hyperparameters path')
     parser.add_argument('--epochs', type=int, default=300)
     parser.add_argument('--batch-size', type=int, default=16, help='total batch size for all GPUs')
     parser.add_argument('--imgsz', '--img', '--img-size', type=int, default=640, help='train, val image size (pixels)')
@@ -473,7 +462,7 @@ def main(opt):
         # check_requirements(requirements=FILE.parent / 'requirements.txt', exclude=['thop'])
 
     # Resume
-    if opt.resume and not check_wandb_resume(opt) and not opt.evolve:  # resume an interrupted run
+    if opt.resume and not opt.evolve:  # resume an interrupted run
         ckpt = opt.resume if isinstance(opt.resume, str) else get_latest_run()  # specified or most recent path
         assert os.path.isfile(ckpt), 'ERROR: --resume checkpoint does not exist'
         with open(Path(ckpt).parent.parent / 'opt.yaml') as f:

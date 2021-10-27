@@ -24,3 +24,16 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --name train \
 --workers 128 \
 --resume runs/s_e100_p6/train/weights/last.pt
+
+
+python train.py \
+--img 1280 \
+--batch 80 \
+--epochs 500 \
+--data data/coco_kp.yaml \
+--hyp data/hyps/hyp.kp-p6.yaml \
+--val-scales 1 \
+--val-flips -1 \
+--weights yolov5m6.pt \
+--workers 128
+

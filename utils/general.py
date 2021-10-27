@@ -30,6 +30,7 @@ import yaml
 from utils.downloads import gsutil_getsize
 from utils.metrics import box_iou, fitness
 from utils.torch_utils import init_torch_seeds
+from utils.labels import write_kp_labels
 
 # Settings
 torch.set_printoptions(linewidth=320, precision=5, profile='long')
@@ -290,23 +291,27 @@ def check_dataset(data, autodownload=True):
     if val:
         val = [Path(x).resolve() for x in (val if isinstance(val, list) else [val])]  # val path
         if not all(x.exists() for x in val):
-            print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
-            if s and autodownload:  # download script
-                if s.startswith('http') and s.endswith('.zip'):  # URL
-                    f = Path(s).name  # filename
-                    print(f'Downloading {s} ...')
-                    torch.hub.download_url_to_file(s, f)
-                    root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
-                    Path(root).mkdir(parents=True, exist_ok=True)  # create root
-                    r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
-                elif s.startswith('bash '):  # bash script
-                    print(f'Running {s} ...')
-                    r = os.system(s)
-                else:  # python script
-                    r = exec(s, {'yaml': data})  # return None
-                print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
+            if 'kp_bbox' in data.keys():
+                print('Writing dataset labels to {}...'.format(os.path.join(data['path'], data['labels'])))
+                write_kp_labels(data)
             else:
-                raise Exception('Dataset not found.')
+                print('\nWARNING: Dataset not found, nonexistent paths: %s' % [str(x) for x in val if not x.exists()])
+                if s and autodownload:  # download script
+                    if s.startswith('http') and s.endswith('.zip'):  # URL
+                        f = Path(s).name  # filename
+                        print(f'Downloading {s} ...')
+                        torch.hub.download_url_to_file(s, f)
+                        root = path.parent if 'path' in data else '..'  # unzip directory i.e. '../'
+                        Path(root).mkdir(parents=True, exist_ok=True)  # create root
+                        r = os.system(f'unzip -q {f} -d {root} && rm {f}')  # unzip
+                    elif s.startswith('bash '):  # bash script
+                        print(f'Running {s} ...')
+                        r = os.system(s)
+                    else:  # python script
+                        r = exec(s, {'yaml': data})  # return None
+                    print('Dataset autodownload %s\n' % ('success' if r in (0, None) else 'failure'))  # print result
+                else:
+                    raise Exception('Dataset not found.')
 
     return data  # dictionary
 

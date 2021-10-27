@@ -92,12 +92,12 @@ def exif_transpose(image):
     return image
 
 
-def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
+def create_dataloader(path, labels_dir, imgsz, batch_size, stride, single_cls=False, hyp=None, augment=False, cache=False, pad=0.0,
                       rect=False, rank=-1, workers=8, image_weights=False, quad=False, prefix='',
-                      kp_flip=None):
+                      kp_flip=None, kp_bbox=None):
     # Make sure only the first process in DDP process the dataset first, and the following others can use the cache
     with torch_distributed_zero_first(rank):
-        dataset = LoadImagesAndLabels(path, imgsz, batch_size,
+        dataset = LoadImagesAndLabels(path, labels_dir, imgsz, batch_size,
                                       augment=augment,  # augment images
                                       hyp=hyp,  # augmentation hyperparameters
                                       rect=rect,  # rectangular training
@@ -107,7 +107,8 @@ def create_dataloader(path, imgsz, batch_size, stride, single_cls=False, hyp=Non
                                       pad=pad,
                                       image_weights=image_weights,
                                       prefix=prefix,
-                                      kp_flip=kp_flip)
+                                      kp_flip=kp_flip,
+                                      kp_bbox=kp_bbox)
 
         # for i in range(10):
         #     dataset.__getitem__(i)
@@ -370,16 +371,15 @@ class LoadStreams:  # multiple IP or RTSP cameras
         return len(self.sources)  # 1E12 frames = 32 streams at 30 FPS for 30 years
 
 
-def img2label_paths(img_paths):
-    # Define label paths as a function of image paths
-    sa, sb = os.sep + 'images' + os.sep, os.sep + 'labels' + os.sep  # /images/, /labels/ substrings
-    return [sb.join(x.rsplit(sa, 1)).rsplit('.', 1)[0] + '.txt' for x in img_paths]
+def img2label_paths(img_paths, image_dir='images', labels_dir='labels'):
+    return [os.path.splitext(s.replace(image_dir, labels_dir))[0] + '.txt' for s in img_paths]
 
 
 class LoadImagesAndLabels(Dataset):  # for training/testing
-    def __init__(self, path, img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
+    def __init__(self, path, labels_dir='labels', img_size=640, batch_size=16, augment=False, hyp=None, rect=False, image_weights=False,
                  cache_images=False, single_cls=False, stride=32, pad=0.0, prefix='',
-                 kp_flip=None):
+                 kp_flip=None, kp_bbox=None):
+        self.labels_dir = labels_dir
         self.img_size = img_size
         self.augment = augment
         self.hyp = hyp
@@ -391,6 +391,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.path = path
         self.albumentations = Albumentations() if augment else None
         self.kp_flip = kp_flip
+        self.kp_bbox = kp_bbox
         self.num_coords = len(kp_flip) * 2
 
         if self.kp_flip:
@@ -422,7 +423,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
             raise Exception(f'{prefix}Error loading data from {path}: {e}\nSee {HELP_URL}')
 
         # Check cache
-        self.label_files = img2label_paths(self.img_files)  # labels
+        self.label_files = img2label_paths(self.img_files, labels_dir=self.labels_dir)  # labels
         cache_path = (p if p.is_file() else Path(self.label_files[0]).parent).with_suffix('.cache')
         try:
             cache, exists = np.load(cache_path, allow_pickle=True).item(), True  # load dict
@@ -445,7 +446,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         self.labels = list(labels)
         self.shapes = np.array(shapes, dtype=np.float64)
         self.img_files = list(cache.keys())  # update
-        self.label_files = img2label_paths(cache.keys())  # update
+        self.label_files = img2label_paths(cache.keys(), labels_dir=self.labels_dir)  # update
         if single_cls:
             for x in self.labels:
                 x[:, 0] = 0
@@ -552,15 +553,10 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
         index = self.indices[index]  # linear, shuffled, or image_weights
 
         hyp = self.hyp
-        if hyp and 'kp_bbox' in hyp:
-            kp_bbox = hyp['kp_bbox']
-        else:
-            kp_bbox = None
-
         mosaic = self.mosaic and random.random() < hyp['mosaic']
         if mosaic:
             # Load mosaic
-            img, labels = load_mosaic(self, index, kp_bbox=kp_bbox)
+            img, labels = load_mosaic(self, index, kp_bbox=self.kp_bbox)
             shapes = None
 
             # MixUp augmentation
@@ -587,7 +583,7 @@ class LoadImagesAndLabels(Dataset):  # for training/testing
                                                  scale=hyp['scale'],
                                                  shear=hyp['shear'],
                                                  perspective=hyp['perspective'],
-                                                 kp_bbox=kp_bbox)
+                                                 kp_bbox=self.kp_bbox)
 
         nl = len(labels)  # number of labels
         if nl:
@@ -864,7 +860,7 @@ def flatten_recursive(path='../datasets/coco128'):
         shutil.copyfile(file, new_path / Path(file).name)
 
 
-def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; extract_boxes()
+def extract_boxes(path='../datasets/coco128', labels_dir='labels'):  # from utils.datasets import *; extract_boxes()
     # Convert detection dataset into classification dataset, with one directory per class
     path = Path(path)  # images dir
     shutil.rmtree(path / 'classifier') if (path / 'classifier').is_dir() else None  # remove existing
@@ -877,7 +873,7 @@ def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; 
             h, w = im.shape[:2]
 
             # labels
-            lb_file = Path(img2label_paths([str(im_file)])[0])
+            lb_file = Path(img2label_paths([str(im_file)], labels_dir=labels_dir)[0])
             if Path(lb_file).exists():
                 with open(lb_file, 'r') as f:
                     lb = np.array([x.split() for x in f.read().strip().splitlines()], dtype=np.float32)  # labels
@@ -898,7 +894,7 @@ def extract_boxes(path='../datasets/coco128'):  # from utils.datasets import *; 
                     assert cv2.imwrite(str(f), im[b[1]:b[3], b[0]:b[2]]), f'box failure in {f}'
 
 
-def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False):
+def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annotated_only=False, labels_dir='labels_dir'):
     """ Autosplit a dataset into train/val/test splits and save path/autosplit_*.txt files
     Usage: from utils.datasets import *; autosplit()
     Arguments
@@ -917,7 +913,7 @@ def autosplit(path='../datasets/coco128/images', weights=(0.9, 0.1, 0.0), annota
 
     print(f'Autosplitting images from {path}' + ', using *.txt labeled images only' * annotated_only)
     for i, img in tqdm(zip(indices, files), total=n):
-        if not annotated_only or Path(img2label_paths([str(img)])[0]).exists():  # check label
+        if not annotated_only or Path(img2label_paths([str(img)], labels_dir='labels_dir')[0]).exists():  # check label
             with open(path.parent / txt[i], 'a') as f:
                 f.write('./' + img.relative_to(path.parent).as_posix() + '\n')  # add image to txt file
 
@@ -968,7 +964,7 @@ def verify_image_label(args):
         return [None, None, None, None, nm, nf, ne, nc, msg]
 
 
-def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False):
+def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profile=False, hub=False, labels_dir='labels'):
     """ Return dataset statistics dictionary with images and instances counts per split per class
     To run in parent directory: export PYTHONPATH="$PWD/yolov5"
     Usage1: from utils.datasets import *; dataset_stats('coco128.yaml', autodownload=True)
@@ -1014,7 +1010,7 @@ def dataset_stats(path='coco128.yaml', autodownload=False, verbose=False, profil
             stats[split] = None  # i.e. no test set
             continue
         x = []
-        dataset = LoadImagesAndLabels(data[split])  # load dataset
+        dataset = LoadImagesAndLabels(data[split], labels_dir=labels_dir)  # load dataset
         for label in tqdm(dataset.labels, total=dataset.n, desc='Statistics'):
             x.append(np.bincount(label[:, 0].astype(int), minlength=data['nc']))
         x = np.array(x)  # shape(128x80)
