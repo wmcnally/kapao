@@ -36,7 +36,6 @@ IMG_FORMATS = ['bmp', 'jpg', 'jpeg', 'png', 'tif', 'tiff', 'dng', 'webp', 'mpo']
 VID_FORMATS = ['mov', 'avi', 'mp4', 'mpg', 'mpeg', 'm4v', 'wmv', 'mkv']  # acceptable video suffixes
 NUM_THREADS = os.cpu_count()  # number of multiprocessing threads
 
-COCO_KP_LEFT = [1, 3, 5, 7, 9, 11, 13, 15]
 
 # Get orientation exif tag
 for orientation in ExifTags.TAGS.keys():
@@ -221,7 +220,7 @@ class LoadImages:  # for inference
                     ret_val, img0 = self.cap.read()
 
             self.frame += 1
-            print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: ', end='')
+            # print(f'video {self.count + 1}/{self.nf} ({self.frame}/{self.frames}) {path}: ', end='')
 
         else:
             # Read image
