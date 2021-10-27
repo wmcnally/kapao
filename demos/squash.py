@@ -208,8 +208,10 @@ if __name__ == '__main__':
                 else:
                     orange_player = 1
                 blue_player = int(not orange_player)
+
+                # if only one player detected, find which player is missing
                 missing = -1
-                if len(player_poses) == 1:  # if only one player detected, find which player is missing and use last
+                if len(player_poses) == 1:
                     if orange_player == 0:  # missing blue player
                         player_poses = np.concatenate((player_poses, poses_last[1:]), axis=0)
                         player_bboxes = np.concatenate((player_bboxes, bboxes_last[1:]), axis=0)
@@ -227,7 +229,10 @@ if __name__ == '__main__':
             t = time_sync() - t0
         else:
             t = time_sync() - t1
-        cv2.putText(im0, '{:.1f} FPS'.format(1 / t), (5, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), thickness=2)
+
+        if args.display:
+            cv2.putText(im0, '{:.1f} FPS'.format(1 / t), (5, 25),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), thickness=2)
 
         if not args.display:
             writer.write(im0)
