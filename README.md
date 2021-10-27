@@ -4,7 +4,7 @@
 
 This repository was forked from ultralytics/yolov5 at commit [5487451](https://github.com/ultralytics/yolov5/tree/5487451) (before the release v6.0)
 
-## Environment Setup
+### Environment Setup
 1. If you haven't already, [install Anaconda or Miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
 2. Create a new conda environment with Python 3.6: `$ conda create -n yolo-pose python=3.6`. Note that the [CrowdPose API](https://github.com/Jeff-sjtu/CrowdPose/tree/master/crowdpose-api) is incompatible with Python >= 3.6.
 3. Activate the environment: `$ conda activate yolo-pose`
@@ -12,7 +12,7 @@ This repository was forked from ultralytics/yolov5 at commit [5487451](https://g
 5. Install the dependencies: `$ cd yolo-pose && pip install -r requirements.txt`
 6. Download the trained models from [Google Drive](https://drive.google.com/drive/folders/1ziA3-9NwShjYZ2LHEapJmPe96q2sMMKh?usp=sharing) and place in `yolo-pose/`.
 
-## Inference Demo
+### Inference Demo
 To display the inference results in real-time: <br> 
 `$ python demos/squash.py --weights yolopose_s.pt --imgsz 1280 --display`
 
@@ -63,7 +63,7 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --workers 128 \
 ```
 
-YOLOPose-M:
+YOLOPose-L:
 ```
 python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --img 1280 \
