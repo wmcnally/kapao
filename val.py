@@ -17,8 +17,6 @@ from utils.general import check_dataset, check_file, check_img_size, \
     non_max_suppression_kp, scale_coords, set_logging, colorstr
 from utils.torch_utils import select_device, time_sync
 import tempfile
-from pycocotools.coco import COCO
-from pycocotools.cocoeval import COCOeval
 
 
 @torch.no_grad()
@@ -28,12 +26,12 @@ def run(data,
         imgsz=1280,  # inference size (pixels)
         task='val',  # train, val, test, speed or study
         device='',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
-        conf_thres=0.01,  # confidence threshold
-        iou_thres=0.45,  # NMS IoU threshold
+        conf_thres=0.001,  # confidence threshold
+        iou_thres=0.65,  # NMS IoU threshold
         no_kp_dets=False,
-        conf_thres_kp=0.5,
-        iou_thres_kp=0.45,
-        conf_thres_kp_person=0.2,
+        conf_thres_kp=0.2,
+        iou_thres_kp=0.25,
+        conf_thres_kp_person=0.3,
         overwrite_tol=50,  # pixels for kp det overwrite
         scales=[1],
         flips=[None],
@@ -60,6 +58,14 @@ def run(data,
         # Data
         data = check_dataset(data)  # check
 
+    is_coco = 'coco' in data['path']
+    if is_coco:
+        from pycocotools.coco import COCO
+        from pycocotools.cocoeval import COCOeval
+    else:
+        from crowdposetools.coco import COCO
+        from crowdposetools.cocoeval import COCOeval
+
     # Half
     half &= device.type != 'cpu'  # half precision only supported on CUDA
     if half:
@@ -73,7 +79,7 @@ def run(data,
         if device.type != 'cpu':
             model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
         task = task if task in ('train', 'val', 'test') else 'val'  # path to train/val/test images
-        dataloader = create_dataloader(data[task], data['labels'], imgsz, batch_size, gs, rect=False,
+        dataloader = create_dataloader(data[task], data['labels'], imgsz, batch_size, gs, rect=True,
                                        prefix=colorstr(f'{task}: '), kp_flip=data['kp_flip'])[0]
 
     seen = 0
@@ -103,7 +109,7 @@ def run(data,
         # Run NMS
         t = time_sync()
 
-        if iou_thres == iou_thres_kp and conf_thres_kp > conf_thres:
+        if iou_thres == iou_thres_kp and conf_thres_kp >= conf_thres:
             # Combined NMS saves ~0.2 ms / image
             dets = non_max_suppression_kp(out, conf_thres, iou_thres, num_coords=data['num_coords'])
             person_dets = [d[d[:, 5] == 0] for d in dets]
@@ -162,36 +168,38 @@ def run(data,
                         'score': float(score)  # person score
                     })
 
-    if len(json_dump):
-        if not training:  # save json
-            save_dir, weights_name = osp.split(weights)
-            json_name = '{}_{}'.format(
-                osp.splitext(osp.split(task)[-1])[0],
-                osp.splitext(weights_name)[0])
-            json_path = osp.join(save_dir, json_name + '.json')
-        else:
-            tmp = tempfile.NamedTemporaryFile(mode='w+b')
-            json_path = tmp.name
+    if not training:  # save json
+        save_dir, weights_name = osp.split(weights)
+        json_name = '{}_{}_{}_c{}_i{}_ck{}_ik{}_ckp{}_t{}.json'.format(
+            'coco' if is_coco else 'crowdpose', 'task',
+            osp.splitext(weights_name)[0],
+            conf_thres, iou_thres, conf_thres_kp, iou_thres_kp,
+            conf_thres_kp_person, overwrite_tol
+        )
+        json_path = osp.join(save_dir, json_name)
+    else:
+        tmp = tempfile.NamedTemporaryFile(mode='w+b')
+        json_path = tmp.name
 
-        with open(json_path, 'w') as f:
-            json.dump(json_dump, f)
+    with open(json_path, 'w') as f:
+        json.dump(json_dump, f)
 
-        if task in ('train', 'val'):
-            annot = osp.join(data['path'], 'annotations', 'person_keypoints_val2017.json')
-            coco = COCO(annot)
-            result = coco.loadRes(json_path)
-            eval = COCOeval(coco, result, iouType='keypoints')
-            eval.evaluate()
-            eval.accumulate()
-            eval.summarize()
-            map, map50 = eval.stats[:2]
+    if task in ('train', 'val'):
+        annot = osp.join(data['path'], data['{}_annotations'.format(task)])
+        coco = COCO(annot)
+        result = coco.loadRes(json_path)
+        eval = COCOeval(coco, result, iouType='keypoints')
+        eval.evaluate()
+        eval.accumulate()
+        eval.summarize()
+        map, map50 = eval.stats[:2]
 
-        if training:
-            tmp.close()
+    if training:
+        tmp.close()
 
     # Print speeds
     t = tuple(x / seen * 1E3 for x in (t0, t1, t2))  # speeds per image
-    if not training:
+    if not training and task != 'test':
         os.rename(json_path, osp.splitext(json_path)[0] + '_ap{:.4f}.json'.format(map))
         shape = (batch_size, 3, imgsz, imgsz)
         print(f'Speed: %.3fms pre-process, %.3fms inference, %.3fms NMS per image at shape {shape}' % t)
@@ -208,12 +216,12 @@ def parse_opt():
     parser.add_argument('--imgsz', type=int, default=1280, help='inference size (pixels)')
     parser.add_argument('--task', default='val', help='train, val, test')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
-    parser.add_argument('--conf-thres', type=float, default=0.01, help='confidence threshold')
-    parser.add_argument('--iou-thres', type=float, default=0.45, help='NMS IoU threshold')
+    parser.add_argument('--conf-thres', type=float, default=0.001, help='confidence threshold')
+    parser.add_argument('--iou-thres', type=float, default=0.65, help='NMS IoU threshold')
     parser.add_argument('--no-kp-dets', action='store_true', help='do not use keypoint objects')
-    parser.add_argument('--conf-thres-kp', type=float, default=0.5)
-    parser.add_argument('--conf-thres-kp-person', type=float, default=0.2)
-    parser.add_argument('--iou-thres-kp', type=float, default=0.45)
+    parser.add_argument('--conf-thres-kp', type=float, default=0.2)
+    parser.add_argument('--conf-thres-kp-person', type=float, default=0.3)
+    parser.add_argument('--iou-thres-kp', type=float, default=0.25)
     parser.add_argument('--overwrite-tol', type=int, default=50)
     parser.add_argument('--scales', type=float, nargs='+', default=[1])
     parser.add_argument('--flips', type=int, nargs='+', default=[-1])
