@@ -170,9 +170,8 @@ def run(data,
 
     if not training:  # save json
         save_dir, weights_name = osp.split(weights)
-        json_name = '{}_{}_{}_c{}_i{}_ck{}_ik{}_ckp{}_t{}.json'.format(
-            'coco' if is_coco else 'crowdpose', 'task',
-            osp.splitext(weights_name)[0],
+        json_name = '{}_{}_c{}_i{}_ck{}_ik{}_ckp{}_t{}.json'.format(
+            task, osp.splitext(weights_name)[0],
             conf_thres, iou_thres, conf_thres_kp, iou_thres_kp,
             conf_thres_kp_person, overwrite_tol
         )
@@ -211,7 +210,7 @@ def run(data,
 def parse_opt():
     parser = argparse.ArgumentParser(prog='val.py')
     parser.add_argument('--data', type=str, default='data/coco-kp.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', default='yolopose_s.pt')
+    parser.add_argument('--weights', default='yolopose_s_coco.pt')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--imgsz', type=int, default=1280, help='inference size (pixels)')
     parser.add_argument('--task', default='val', help='train, val, test')
