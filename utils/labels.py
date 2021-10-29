@@ -51,8 +51,10 @@ def write_kp_labels(data):
 
                 keypoints = np.array(a['keypoints']).reshape([-1, 3])
 
-                if (keypoints < 0).any():
-                    print(keypoints)
+                # some of crowdpose keypoints are just outside image so clip to image extents
+                if not is_coco:
+                    keypoints[:, 0] = np.clip(keypoints[:, 0], 0, img_w)
+                    keypoints[:, 1] = np.clip(keypoints[:, 1], 0, img_h)
 
                 with open(osp.join(labels_path, '{}.txt'.format(osp.splitext(img_info['file_name'])[0])), 'a') as f:
                     # write person object
@@ -92,12 +94,11 @@ def write_kp_labels(data):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data', default='coco-kp.yaml')
+    parser.add_argument('--data', default='data/coco-kp.yaml')
     args = parser.parse_args()
 
-    data_path = osp.join('data', args.data)
-    assert osp.isfile(data_path), 'Data config file not found at {}'.format(data_path)
+    assert osp.isfile(args.data), 'Data config file not found at {}'.format(args.data)
 
-    with open(data_path, 'rb') as f:
+    with open(args.data, 'rb') as f:
         data = yaml.safe_load(f)
     write_kp_labels(data)

@@ -1,0 +1,62 @@
+
+# train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
+path: /media/wmcnally/data/crowdpose/
+labels: yp_labels
+train: yp_labels/img_txt/trainval.txt
+val: yp_labels/img_txt/test.txt
+
+train_annotations: crowdpose_trainval.json
+val_annotations: crowdpose_test.json
+
+pose_obj: True  # write pose object labels
+
+nc: 15  # number of classes (person class + 14 keypoint classes)
+num_coords: 28 # number of keypoint coordinates (x, y)
+
+# class names
+names: [ 'person',
+         'left_shoulder', 'right_shoulder',
+         'left_elbow', 'right_elbow',
+         'left_wrist', 'right_wrist',
+         'left_hip', 'right_hip',
+         'left_knee', 'right_knee',
+         'left_ankle', 'right_ankle',
+         'head', 'neck']
+
+kp_bbox: 0.05  # keypoint object size (normalized by longest img dim)
+kp_flip: [1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 12, 13]  # for left-right keypoint flipping
+kp_left: [0, 2, 4, 6, 8, 10]  # left keypoints
+
+kp_names_short:
+  0: 'ls'
+  1: 'rs'
+  2: 'lel'
+  3: 'rel'
+  4: 'lw'
+  5: 'rw'
+  6: 'lh'
+  7: 'rh'
+  8: 'lk'
+  9: 'rk'
+  10: 'la'
+  11: 'ra'
+  12: 'h'
+  13: 'n'
+
+# segments for plotting
+segments:
+  1: [0, 13]
+  2: [1, 13]
+  3: [0, 2]
+  4: [2, 4]
+  5: [1, 3]
+  6: [3, 5]
+  7: [0, 6]
+  8: [6, 7]
+  9: [7, 1]
+  10: [6, 8]
+  11: [8, 10]
+  12: [7, 9]
+  13: [9, 11]
+  14: [12, 13]
+
