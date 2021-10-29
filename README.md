@@ -1,8 +1,13 @@
 # YOLOPose
 
-[comment]: <> (The official PyTorch implementation for the paper [Modeling Keypoints and Objects as Poses for Bottom-up Human Pose Estimation]&#40;&#41;.)
+**THIS REPOSITORY IS UNDER ACTIVE DEVELOPMENT. USE WITH CAUTION.**
 
-This repository was forked from ultralytics/yolov5 at commit [5487451](https://github.com/ultralytics/yolov5/tree/5487451) (before the release v6.0)
+YOLOPose is an efficient bottom-up multi-person human pose estimation model. When not using test-time augmentation,
+it is much faster and more accurate than previous methods like DEKR and HigherHRNet. 
+
+This repository contains the official PyTorch implementation for the paper: **Modeling Keypoints and Objects as Poses for Bottom-up Human Pose Estimation** (link coming soon).
+
+Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.com/ultralytics/yolov5/tree/5487451).
 
 ### Environment Setup
 1. If you haven't already, [install Anaconda or Miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
@@ -23,18 +28,23 @@ Remove the `--display` argument to write an inference video: <br>
 Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`
 
 ### Validation (without TTA)
-YOLOPose-S (63.0 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280`
+- YOLOPose-S (63.0 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280`
+- YOLOPose-M (68.5 AP): `$ python val.py --weights yolopose_m_coco.pt --imgsz 1280`
 
 ### Validation (with TTA)
-YOLOPose-S (64.3 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
+- YOLOPose-S (64.3 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
+`--scales 0.8 1 1.2 --flips -1 3 -1` 
+- YOLOPose-M (69.6 AP): `$ python val.py --weights yolopose_m_coco.pt --imgsz 1280 \ `<br>
 `--scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ### Testing
-YOLOPose-S (63.6): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
+- YOLOPose-S (63.6 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
+`--task test --scales 0.8 1 1.2 --flips -1 3 -1` 
+- YOLOPose-M (68.6 AP): `$ python val.py --weights yolopose_m_coco.pt --imgsz 1280 \ `<br>
 `--task test --scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ### Training
-The following commands were used to train the YOLOPose models on 4xV100s (32GB memory each).
+The following commands were used to train the YOLOPose models on 4 V100s with 32GB memory each.
 
 YOLOPose-S:
 ```
