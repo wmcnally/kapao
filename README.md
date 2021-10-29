@@ -14,20 +14,24 @@ This repository was forked from ultralytics/yolov5 at commit [5487451](https://g
 
 ### Inference Demo
 To display the inference results in real-time: <br> 
-`$ python demos/squash.py --weights yolopose_s.pt --imgsz 1280 --display`
+`$ python demos/squash.py --weights yolopose_s_coco.pt --imgsz 1280 --display`
 
 Remove the `--display` argument to write an inference video: <br>
-`$ python demos/squash.py --weights yolopose_s.pt --imgsz 1280` <br>
+`$ python demos/squash.py --weights yolopose_s_coco.pt --imgsz 1280` <br>
 
 ## COCO Experiments
 Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`
 
 ### Validation (without TTA)
-YOLOPose-S (62.4 AP): `$ python val.py --weights yolopose_s.pt --imgsz 1280`
+YOLOPose-S (63.0 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280`
 
 ### Validation (with TTA)
-YOLOPose-S (63.8 AP): `$ python val.py --weights yolopose_s.pt --imgsz 1280 \ `<br>
+YOLOPose-S (64.3 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
 `--scales 0.8 1 1.2 --flips -1 3 -1` 
+
+### Testing
+YOLOPose-S (63.6): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
+`--task test --scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ### Training
 The following commands were used to train the YOLOPose models on 4xV100s (32GB memory each).
@@ -50,7 +54,7 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 
 YOLOPose-M:
 ```
-python -m torch.distributed.launch --nproc_per_node 4 train.py \
+python train.py \
 --img 1280 \
 --batch 72 \
 --epochs 500 \
@@ -66,7 +70,7 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 
 YOLOPose-L:
 ```
-python -m torch.distributed.launch --nproc_per_node 4 train.py \
+python train.py \
 --img 1280 \
 --batch 48 \
 --epochs 500 \
@@ -79,6 +83,9 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --name train \
 --workers 128 \
 ```
+
+**Note:** [DDP](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) is usually recommended but we found training was less stable for YOLOPose-M/L using DDP. We are investigating this issue.
+
 
 ## CrowdPose Experiments
 
