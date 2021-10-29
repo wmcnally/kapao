@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=4
-#SBATCH --time=8:00:00
+#SBATCH --time=4:00:00
 #SBATCH --job-name=s_abl_p01
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
@@ -23,3 +23,4 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --project runs/ablation/s_e50_p01 \
 --name train \
 --workers 128 \
+--resume runs/ablation/s_e50_p01/train/weights/last.pt
