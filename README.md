@@ -5,7 +5,7 @@
 YOLOPose is an efficient bottom-up multi-person human pose estimation model. When not using test-time augmentation,
 it is much faster and more accurate than previous methods like DEKR and HigherHRNet. 
 
-This repository contains the official PyTorch implementation for the paper: **Modeling Keypoints and Objects as Poses for Bottom-up Human Pose Estimation** (link coming soon).
+This repository contains the official PyTorch implementation for the paper: **Modeling Keypoints and Poses as Objects for Bottom-up Human Pose Estimation** (link coming soon).
 
 Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.com/ultralytics/yolov5/tree/5487451).
 
