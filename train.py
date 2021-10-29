@@ -349,6 +349,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 results, maps, _ = val.run(data_dict,
                                            batch_size=batch_size // WORLD_SIZE,
                                            imgsz=imgsz,
+                                           conf_thres=0.01,
                                            model=ema.ema,
                                            dataloader=val_loader,
                                            compute_loss=compute_loss,
@@ -447,8 +448,8 @@ def parse_opt(known=False):
     parser.add_argument('--local_rank', type=int, default=-1, help='DDP parameter, do not modify')
     parser.add_argument('--freeze', type=int, default=0, help='Number of layers to freeze. backbone=10, all=24')
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
-    parser.add_argument('--val-scales', type=float, nargs='+', default=[0.5, 1, 2])
-    parser.add_argument('--val-flips', type=int, nargs='+', default=[-1, 3, -1])
+    parser.add_argument('--val-scales', type=float, nargs='+', default=[1])
+    parser.add_argument('--val-flips', type=int, nargs='+', default=[-1])
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
