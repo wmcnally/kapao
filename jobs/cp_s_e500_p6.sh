@@ -22,4 +22,6 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --weights yolov5s6.pt \
 --project runs/cp_s_e500_p6 \
 --name train \
---workers 128
+--workers 128 \
+--noval \
+--resume runs/cp_s_e500_p6/train/weights/last.pt
