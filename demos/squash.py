@@ -13,6 +13,7 @@ from models.experimental import attempt_load
 import torch
 import cv2
 import numpy as np
+import yaml
 
 
 VIDEO_NAME = 'Squash MegaRally 176 ReDux - Slow Mo Edition.mp4'
@@ -55,7 +56,9 @@ if __name__ == '__main__':
     parser.add_argument('--display', action='store_true', help='display inference results')
     args = parser.parse_args()
 
-    data = check_dataset(args.data)
+    with open(args.data) as f:
+        data = yaml.safe_load(f)  # load hyps dict
+
     args.flips = [None if f == -1 else f for f in args.flips]
     use_kp_dets = not args.no_kp_dets
 
