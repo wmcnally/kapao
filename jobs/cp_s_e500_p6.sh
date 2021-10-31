@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=4
-#SBATCH --time=1-00:00:00
+#SBATCH --time=7:00:00
 #SBATCH --job-name=cp_s_e500_p6
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
