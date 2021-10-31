@@ -252,7 +252,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+    results = (0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     stopper = EarlyStopping(patience=opt.patience)
@@ -356,14 +356,12 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                                            scales=val_scales,
                                            flips=val_flips)
 
-                # Update best mAP
-                fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
-                if fi > best_fitness:
-                    best_fitness = fi
-                log_vals = list(mloss) + list(results) + lr
-                callbacks.on_fit_epoch_end(log_vals, epoch, best_fitness, fi)
-            else:
-                fi = 0.
+            # Update best mAP
+            fi = fitness(np.array(results).reshape(1, -1))  # weighted combination of [P, R, mAP@.5, mAP@.5-.95]
+            if fi > best_fitness:
+                best_fitness = fi
+            log_vals = list(mloss) + list(results) + lr
+            callbacks.on_fit_epoch_end(log_vals, epoch, best_fitness, fi)
 
             # Save model
             if (not nosave) or (final_epoch and not evolve):  # if save
