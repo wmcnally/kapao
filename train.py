@@ -362,23 +362,25 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                     best_fitness = fi
                 log_vals = list(mloss) + list(results) + lr
                 callbacks.on_fit_epoch_end(log_vals, epoch, best_fitness, fi)
+            else:
+                fi = 0.
 
-                # Save model
-                if (not nosave) or (final_epoch and not evolve):  # if save
-                    ckpt = {'epoch': epoch,
-                            'best_fitness': best_fitness,
-                            'model': deepcopy(de_parallel(model)).half(),
-                            'ema': deepcopy(ema.ema).half(),
-                            'updates': ema.updates,
-                            'optimizer': optimizer.state_dict(),
-                            'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None}
+            # Save model
+            if (not nosave) or (final_epoch and not evolve):  # if save
+                ckpt = {'epoch': epoch,
+                        'best_fitness': best_fitness,
+                        'model': deepcopy(de_parallel(model)).half(),
+                        'ema': deepcopy(ema.ema).half(),
+                        'updates': ema.updates,
+                        'optimizer': optimizer.state_dict(),
+                        'wandb_id': loggers.wandb.wandb_run.id if loggers.wandb else None}
 
-                    # Save last, best and delete
-                    torch.save(ckpt, last)
-                    if best_fitness == fi:
-                        torch.save(ckpt, best)
-                    del ckpt
-                    callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
+                # Save last, best and delete
+                torch.save(ckpt, last)
+                if best_fitness == fi:
+                    torch.save(ckpt, best)
+                del ckpt
+                callbacks.on_model_save(last, epoch, final_epoch, best_fitness, fi)
 
             # Stop Single-GPU
             if RANK == -1 and stopper(epoch=epoch, fitness=fi):
