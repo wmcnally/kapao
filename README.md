@@ -9,13 +9,13 @@ This repository contains the official PyTorch implementation for the paper: **Mo
 
 Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.com/ultralytics/yolov5/tree/5487451).
 
-### Environment Setup
+### Setup
 1. If you haven't already, [install Anaconda or Miniconda](https://docs.conda.io/projects/conda/en/latest/user-guide/install/index.html).
-2. Create a new conda environment with Python 3.6: `$ conda create -n yolo-pose python=3.6`. Note that the [CrowdPose API](https://github.com/Jeff-sjtu/CrowdPose/tree/master/crowdpose-api) is incompatible with Python >= 3.6.
+2. Create a new conda environment with Python 3.6: `$ conda create -n yolo-pose python=3.6`.
 3. Activate the environment: `$ conda activate yolo-pose`
 4. Clone this repo: `$ git clone https://github.com/wmcnally/yolo-pose.git`
 5. Install the dependencies: `$ cd yolo-pose && pip install -r requirements.txt`
-6. Download the trained models from [Google Drive](https://drive.google.com/drive/folders/1ziA3-9NwShjYZ2LHEapJmPe96q2sMMKh?usp=sharing) and place in `yolo-pose/`.
+6. Download the trained models: `$ sh data/scripts/download_models.sh`
 
 ### Inference Demo
 To display the inference results in real-time: <br> 
