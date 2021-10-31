@@ -7,13 +7,14 @@ import argparse
 from pytube import YouTube
 import os.path as osp
 from utils.torch_utils import select_device, time_sync
-from utils.general import check_img_size, check_dataset, non_max_suppression_kp, scale_coords
+from utils.general import check_img_size, non_max_suppression_kp, scale_coords
 from utils.datasets import LoadImages
 from models.experimental import attempt_load
 import torch
 import cv2
 import numpy as np
 import yaml
+from tqdm import tqdm
 
 
 VIDEO_NAME = 'Squash MegaRally 176 ReDux - Slow Mo Edition.mp4'
@@ -96,6 +97,7 @@ if __name__ == '__main__':
     if not args.display:
         writer = cv2.VideoWriter('squash_inference_{}.mp4'.format(osp.splitext(args.weights)[0]),
                                  cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
+        dataset = tqdm(dataset, desc='Writing inference video', total=n)
 
     t0 = time_sync()
     for i, (path, img, im0, _) in enumerate(dataset):
@@ -160,7 +162,7 @@ if __name__ == '__main__':
                 x1, y1, x2, y2 = bbox
                 size = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
                 if size < CROWD_THRES:
-                    cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), GRAY, thickness=2.)
+                    cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), GRAY, thickness=2)
                     for x, y, _ in pose[:5]:
                         cv2.circle(im0_copy, (int(x), int(y)), CROWD_KP_SIZE, GRAY, CROWD_KP_THICK)
                     for seg in data['segments'].values():
