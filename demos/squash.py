@@ -160,7 +160,7 @@ if __name__ == '__main__':
                 x1, y1, x2, y2 = bbox
                 size = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
                 if size < CROWD_THRES:
-                    cv2.rectangle(im0_copy, (x1, y1), (x2, y2), GRAY, thickness=2)
+                    cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), GRAY, thickness=2)
                     for x, y, _ in pose[:5]:
                         cv2.circle(im0_copy, (int(x), int(y)), CROWD_KP_SIZE, GRAY, CROWD_KP_THICK)
                     for seg in data['segments'].values():
