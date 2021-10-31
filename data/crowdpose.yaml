@@ -1,6 +1,6 @@
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
-path: /media/wmcnally/data/crowdpose/
+path: data/datasets/crowdpose
 labels: yp_labels
 train: yp_labels/img_txt/trainval.txt
 val: yp_labels/img_txt/test.txt
