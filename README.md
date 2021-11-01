@@ -28,19 +28,19 @@ Remove the `--display` argument to write an inference video: <br>
 Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`
 
 ### Validation (without TTA)
-- YOLOPose-S (63.0 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280`
-- YOLOPose-M (68.5 AP): `$ python val.py --weights yolopose_m_coco.pt --imgsz 1280`
+- YOLOPose-S (63.0 AP): `$ python val.py --weights yolopose_s_coco.pt `
+- YOLOPose-M (68.5 AP): `$ python val.py --weights yolopose_m_coco.pt `
 
 ### Validation (with TTA)
-- YOLOPose-S (64.3 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
+- YOLOPose-S (64.3 AP): `$ python val.py --weights yolopose_s_coco.pt \ `<br>
 `--scales 0.8 1 1.2 --flips -1 3 -1` 
-- YOLOPose-M (69.6 AP): `$ python val.py --weights yolopose_m_coco.pt --imgsz 1280 \ `<br>
+- YOLOPose-M (69.6 AP): `$ python val.py --weights yolopose_m_coco.pt \ `<br>
 `--scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ### Testing
-- YOLOPose-S (63.6 AP): `$ python val.py --weights yolopose_s_coco.pt --imgsz 1280 \ `<br>
+- YOLOPose-S (63.6 AP): `$ python val.py --weights yolopose_s_coco.pt \ `<br>
 `--task test --scales 0.8 1 1.2 --flips -1 3 -1` 
-- YOLOPose-M (68.6 AP): `$ python val.py --weights yolopose_m_coco.pt --imgsz 1280 \ `<br>
+- YOLOPose-M (68.6 AP): `$ python val.py --weights yolopose_m_coco.pt \ `<br>
 `--task test --scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ### Training
@@ -59,7 +59,7 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --weights yolov5s6.pt \
 --project runs/s_e500 \
 --name train \
---workers 128 \
+--workers 128
 ```
 
 YOLOPose-M:
@@ -75,7 +75,7 @@ python train.py \
 --weights yolov5m6.pt \
 --project runs/m_e500 \
 --name train \
---workers 128 \
+--workers 128
 ```
 
 YOLOPose-L:
@@ -91,16 +91,66 @@ python train.py \
 --weights yolov5l6.pt \
 --project runs/l_e500 \
 --name train \
---workers 128 \
+--workers 128
 ```
 
 **Note:** [DDP](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) is usually recommended but we found training was less stable for YOLOPose-M/L using DDP. We are investigating this issue.
 
-
 ## CrowdPose Experiments
+Download the CrowdPose dataset:  `$ sh data/scripts/get_crowdpose.sh`
 
-Coming soon...
+## Testing
+- YOLOPose-S (64.1 AP): `$ python val.py --data crowdpose.yaml --weights yolopose_s_crowdpose.pt \ `<br>
+`--scales 0.8 1 1.2 --flips -1 3 -1` 
 
-[comment]: <> (3. Download the CrowdPose dataset and place in `data/datasets/crowdpose/` &#40;[images]&#40;https://drive.google.com/file/d/1VprytECcLtU4tKP32SYi_7oDRbw7yUTL/view&#41; and [annotations]&#40;https://drive.google.com/drive/folders/1Ch1Cobe-6byB7sLhy8XRzOGCGTW2ssFv?usp=sharing&#41;&#41;.)
+## Training
+The following commands were used to train the YOLOPose models on 4 V100s with 32GB memory each. Training is done on the `trainval` split with no validation. The test results above were generated using the last model checkpoint.
 
-[comment]: <> (4. Generate the CrowdPose dataset labels: `$ python write_kp_labels.py --data crowdpose.yaml`)
+YOLOPose-S:
+```
+python -m torch.distributed.launch --nproc_per_node 4 train.py \
+--img 1280 \
+--batch 128 \
+--epochs 300 \
+--data data/crowdpose.yaml \
+--hyp data/hyps/hyp.kp-p6.yaml \
+--val-scales 1 \
+--val-flips -1 \
+--weights yolov5s6.pt \
+--project runs/cp_s_e300 \
+--name train \
+--workers 128 \
+--noval
+```
+YOLOPose-M:
+```
+python train.py \
+--img 1280 \
+--batch 72 \
+--epochs 300 \
+--data data/coco-kp.yaml \
+--hyp data/hyps/hyp.kp-p6.yaml \
+--val-scales 1 \
+--val-flips -1 \
+--weights yolov5m6.pt \
+--project runs/cp_m_e300 \
+--name train \
+--workers 128 \
+--noval
+```
+YOLOPose-L:
+```
+python train.py \
+--img 1280 \
+--batch 48 \
+--epochs 300 \
+--data data/crowdpose.yaml \
+--hyp data/hyps/hyp.kp-p6.yaml \
+--val-scales 1 \
+--val-flips -1 \
+--weights yolov5l6.pt \
+--project runs/cp_l_e300 \
+--name train \
+--workers 128 \
+--noval
+```
