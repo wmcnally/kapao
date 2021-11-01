@@ -75,6 +75,8 @@ if __name__ == '__main__':
         print('Done.')
 
     device = select_device(args.device, batch_size=1)
+    print('Using device: {}'.format(device))
+
     model = attempt_load(args.weights, map_location=device)  # load FP32 model
     half = args.half & (device.type != 'cpu')
     if half:  # half precision only supported on CUDA
