@@ -97,8 +97,8 @@ python train.py \
 **Note:** [DDP](https://pytorch.org/tutorials/intermediate/ddp_tutorial.html) is usually recommended but we found training was less stable for YOLOPose-M/L using DDP. We are investigating this issue.
 
 ## CrowdPose Experiments
-- Install the [CrowdPose API](https://github.com/Jeff-sjtu/CrowdPose/tree/master/crowdpose-api): <br>
-`$ cd ../ && git clone https://github.com/Jeff-sjtu/CrowdPose.git` <br>
+- Install the [CrowdPose API](https://github.com/Jeff-sjtu/CrowdPose/tree/master/crowdpose-api) to your conda environment: <br>
+`$ cd .. && git clone https://github.com/Jeff-sjtu/CrowdPose.git` <br>
 `$ cd CrowdPose/crowdpose-api/PythonAPI && sh install.sh && cd ../../../yolo-pose`
 - Download the CrowdPose dataset:  `$ sh data/scripts/get_crowdpose.sh`
 
