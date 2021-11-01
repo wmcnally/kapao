@@ -100,8 +100,8 @@ python train.py \
 Download the CrowdPose dataset:  `$ sh data/scripts/get_crowdpose.sh`
 
 ## Testing
-- YOLOPose-S (64.1 AP): `$ python val.py --data crowdpose.yaml --weights yolopose_s_crowdpose.pt \ `<br>
-`--scales 0.8 1 1.2 --flips -1 3 -1` 
+- YOLOPose-S (64.1 AP): `$ python val.py --data crowdpose.yaml \ `<br>
+`--weights yolopose_s_crowdpose.pt --scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ## Training
 The following commands were used to train the YOLOPose models on 4 V100s with 32GB memory each. Training is done on the `trainval` split with no validation. The test results above were generated using the last model checkpoint.
