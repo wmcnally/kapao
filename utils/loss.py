@@ -96,10 +96,7 @@ class ComputeLoss:
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
-        if hasattr(model, 'module'):
-            self.loss_coeffs = model.module.loss_coeffs  # DP
-        else:
-            self.loss_coeffs = model.loss_coeffs  # single device
+
 
         # Define criteria
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device))
@@ -117,6 +114,12 @@ class ComputeLoss:
         self.balance = {3: [4.0, 1.0, 0.4]}.get(det.nl, [4.0, 1.0, 0.25, 0.06, .02])  # P3-P7
         self.ssi = list(det.stride).index(16) if autobalance else 0  # stride 16 index
         self.BCEcls, self.BCEobj, self.gr, self.hyp, self.autobalance = BCEcls, BCEobj, 1.0, h, autobalance
+
+        if self.autobalance:
+            if hasattr(model, 'module'):
+                self.loss_coeffs = model.module.loss_coeffs  # DP
+            else:
+                self.loss_coeffs = model.loss_coeffs  # single device
 
         # for k in 'na', 'nc', 'nl', 'anchors':
         #     setattr(self, k, getattr(det, k))
