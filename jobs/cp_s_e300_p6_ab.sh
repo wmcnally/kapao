@@ -14,7 +14,7 @@ source activate yolo-pose
 python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --img 1280 \
 --batch 128 \
---epochs 500 \
+--epochs 300 \
 --data data/crowdpose.yaml \
 --hyp data/hyps/hyp.kp-p6.yaml \
 --val-scales 1 \
