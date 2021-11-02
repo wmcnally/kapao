@@ -255,7 +255,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     # nw = min(nw, (epochs - start_epoch) / 2 * nb)  # limit warmup to < 1/2 of training
     last_opt_step = -1
     maps = np.zeros(nc)  # mAP per class
-    results = (0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls)
+    results = (0, 0, 0, 0, 0, 0, 0, 0)  # P, R, mAP@.5, mAP@.5-.95, val_loss(box, obj, cls, kp)
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     stopper = EarlyStopping(patience=opt.patience)
@@ -337,6 +337,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 6) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 callbacks.on_train_batch_end(ni, model, imgs, targets, paths, plots, opt.sync_bn)
+            break
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
