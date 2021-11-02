@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --nodes=1
 #SBATCH --gpus-per-node=4
-#SBATCH --time=00:30:00
+#SBATCH --time=13:00:00
 #SBATCH --job-name=cp_m_e300_p6
 #SBATCH --output=%x.out
 #SBATCH -p compute_full_node
@@ -23,5 +23,4 @@ python train.py \
 --project runs/cp_m_e300_p6 \
 --name train \
 --workers 128 \
---noval \
---resume runs/cp_m_e300_p6/train/weights/last.pt
+--noval
