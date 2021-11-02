@@ -147,8 +147,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     optimizer.add_param_group({'params': g1, 'weight_decay': hyp['weight_decay']})  # add g1 with weight_decay
     optimizer.add_param_group({'params': g2})  # add g2 (biases)
-    if opt.autobalance:
-        optimizer.add_param_group({'params': model.loss_coeffs})
+    optimizer.add_param_group({'params': model.loss_coeffs})  # for autobalancing if used
 
     LOGGER.info(f"{colorstr('optimizer:')} {type(optimizer).__name__} with parameter groups "
                 f"{len(g0)} weight, {len(g1)} weight (no decay), {len(g2)} bias")
@@ -337,7 +336,6 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
                 pbar.set_description(('%10s' * 2 + '%10.4g' * 6) % (
                     f'{epoch}/{epochs - 1}', mem, *mloss, targets.shape[0], imgs.shape[-1]))
                 callbacks.on_train_batch_end(ni, model, imgs, targets, paths, plots, opt.sync_bn)
-            break
             # end batch ------------------------------------------------------------------------------------------------
 
         # Scheduler
