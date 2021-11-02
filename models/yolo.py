@@ -108,6 +108,7 @@ class Model(nn.Module):
         self.names = [str(i) for i in range(self.yaml['nc'])]  # default names
         self.inplace = self.yaml.get('inplace', True)
         self.num_coords = num_coords
+        self.loss_coeffs = nn.Parameter(torch.zeros(2))
         # LOGGER.info([x.shape for x in self.forward(torch.zeros(1, ch, 64, 64))])
 
         # Build strides, anchors

@@ -96,6 +96,11 @@ class ComputeLoss:
         device = next(model.parameters()).device  # get model device
         h = model.hyp  # hyperparameters
 
+        if hasattr(model, 'module'):
+            self.loss_coeffs = model.module.loss_coeffs  # DP
+        else:
+            self.loss_coeffs = model.loss_coeffs  # single device
+
         # Define criteria
         BCEcls = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['cls_pw']], device=device))
         BCEobj = nn.BCEWithLogitsLoss(pos_weight=torch.tensor([h['obj_pw']], device=device))
@@ -176,18 +181,21 @@ class ComputeLoss:
 
             obji = self.BCEobj(pi[..., 4], tobj)
             lobj += obji * self.balance[i]  # obj loss
-            if self.autobalance:
-                self.balance[i] = self.balance[i] * 0.9999 + 0.0001 / obji.detach().item()
 
-        if self.autobalance:
-            self.balance = [x / self.balance[self.ssi] for x in self.balance]
         lbox *= self.hyp['box']
         lobj *= self.hyp['obj']
         lcls *= self.hyp['cls']
         lkps *= self.hyp['kp']
+
+        if self.autobalance:
+            loss = (lbox + lobj + lcls) / (torch.exp(2 * self.loss_coeffs[0])) + self.loss_coeffs[0]
+            loss += lkps / (torch.exp(2 * self.loss_coeffs[1])) + self.loss_coeffs[1]
+        else:
+            loss = lbox + lobj + lcls + lkps
+
         bs = tobj.shape[0]  # batch size
 
-        return (lbox + lobj + lcls + lkps) * bs, torch.cat((lbox, lobj, lcls, lkps)).detach()
+        return loss * bs, torch.cat((lbox, lobj, lcls, lkps)).detach()
 
     def build_targets(self, p, targets):
         # Build targets for compute_loss(), input targets(image,class,x,y,w,h, x1,y1,v1, ..., x17,y17,v17)
