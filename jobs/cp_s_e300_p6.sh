@@ -20,7 +20,7 @@ python -m torch.distributed.launch --nproc_per_node 4 train.py \
 --val-scales 1 \
 --val-flips -1 \
 --weights yolov5s6.pt \
---project runs/cp_s_e300_p6 \
+--project runs/crowdpose/cp_s_e300_p6 \
 --name train \
 --workers 128 \
 --noval
