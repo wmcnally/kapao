@@ -147,8 +147,8 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
 
     optimizer.add_param_group({'params': g1, 'weight_decay': hyp['weight_decay']})  # add g1 with weight_decay
     optimizer.add_param_group({'params': g2})  # add g2 (biases)
-    if opt.autobalance:
-        optimizer.add_param_group({'params': model.loss_coeffs})  # for autobalancing if used
+    # if opt.autobalance:
+    #     optimizer.add_param_group({'params': model.loss_coeffs})  # for autobalancing if used
 
     LOGGER.info(f"{colorstr('optimizer:')} {type(optimizer).__name__} with parameter groups "
                 f"{len(g0)} weight, {len(g1)} weight (no decay), {len(g2)} bias")
@@ -259,7 +259,7 @@ def train(hyp,  # path/to/hyp.yaml or hyp dictionary
     scheduler.last_epoch = start_epoch - 1  # do not move
     scaler = amp.GradScaler(enabled=cuda)
     stopper = EarlyStopping(patience=opt.patience)
-    compute_loss = ComputeLoss(model, autobalance=opt.autobalance, num_coords=num_coords)  # init loss class
+    compute_loss = ComputeLoss(model, autobalance=False, num_coords=num_coords)  # init loss class
     LOGGER.info(f'Image sizes {imgsz} train, {imgsz} val\n'
                 f'Using {train_loader.num_workers} dataloader workers\n'
                 f"Logging results to {colorstr('bold', save_dir)}\n"
