@@ -28,20 +28,24 @@ Remove the `--display` argument to write an inference video: <br>
 Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`
 
 ### Validation (without TTA)
-- YOLOPose-S (63.0 AP): `$ python val.py --weights yolopose_s_coco.pt `
-- YOLOPose-M (68.5 AP): `$ python val.py --weights yolopose_m_coco.pt `
+- YOLOPose-S (63.0 AP): `$ python val.py --rect`
+- YOLOPose-M (68.5 AP): `$ python val.py --rect --weights yolopose_m_coco.pt`
+- YOLOPose-L (70.6 AP): `$ python val.py --rect --weights yolopose_l_coco.pt`
 
 ### Validation (with TTA)
-- YOLOPose-S (64.3 AP): `$ python val.py --weights yolopose_s_coco.pt \ `<br>
-`--scales 0.8 1 1.2 --flips -1 3 -1` 
+- YOLOPose-S (64.3 AP): `$ python val.py --scales 0.8 1 1.2 --flips -1 3 -1`
 - YOLOPose-M (69.6 AP): `$ python val.py --weights yolopose_m_coco.pt \ `<br>
+`--scales 0.8 1 1.2 --flips -1 3 -1` 
+- YOLOPose-M (71.6 AP): `$ python val.py --weights yolopose_l_coco.pt \ `<br>
 `--scales 0.8 1 1.2 --flips -1 3 -1` 
 
 ### Testing
-- YOLOPose-S (63.6 AP): `$ python val.py --weights yolopose_s_coco.pt \ `<br>
-`--task test --scales 0.8 1 1.2 --flips -1 3 -1` 
+- YOLOPose-S (63.6 AP): `$ python val.py --scales 0.8 1 1.2 --flips -1 3 -1 --task test` 
 - YOLOPose-M (68.6 AP): `$ python val.py --weights yolopose_m_coco.pt \ `<br>
-`--task test --scales 0.8 1 1.2 --flips -1 3 -1` 
+`--scales 0.8 1 1.2 --flips -1 3 -1 --task test` 
+- YOLOPose-M (70.3 AP): `$ python val.py --weights yolopose_l_coco.pt \ `<br>
+`--scales 0.8 1 1.2 --flips -1 3 -1 --task test` 
+
 
 ### Training
 The following commands were used to train the YOLOPose models on 4 V100s with 32GB memory each.
