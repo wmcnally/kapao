@@ -35,14 +35,13 @@ def run(data,
         overwrite_tol=50,  # pixels for kp det overwrite
         scales=[1],
         flips=[None],
-        square=False,
+        rect=False,
         half=True,  # use FP16 half-precision inference
         model=None,
         dataloader=None,
         compute_loss=None,
         ):
 
-    rect = not square
     use_kp_dets = not no_kp_dets
 
     # Initialize/load model and set device
@@ -226,7 +225,7 @@ def parse_opt():
     parser.add_argument('--overwrite-tol', type=int, default=50)
     parser.add_argument('--scales', type=float, nargs='+', default=[1])
     parser.add_argument('--flips', type=int, nargs='+', default=[-1])
-    parser.add_argument('--square', action='store_true', help='square input image')
+    parser.add_argument('--rect', action='store_true', help='rectangular input image')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
     opt = parser.parse_args()
     opt.flips = [None if f == -1 else f for f in opt.flips]
