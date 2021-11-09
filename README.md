@@ -1,7 +1,5 @@
 # K-PAO (Keypoints and Poses as Objects)
 
-**THIS REPOSITORY IS UNDER ACTIVE DEVELOPMENT. USE WITH CAUTION.**
-
 K-PAO is an efficient single-stage multi-person human pose estimation model that models 
 keypoints and poses as objects within a dense anchor-based detection framework. 
 When not using test-time augmentation, it is much faster and more accurate than 
