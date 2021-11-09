@@ -2,7 +2,7 @@
 
 K-PAO is an efficient single-stage multi-person human pose estimation model that models 
 **k**eypoints and **p**oses **a**s **o**bjects within a dense anchor-based detection framework. 
-When not using test-time augmentation, it is much faster and more accurate than 
+When not using test-time augmentation (TTA), K-PAO is much faster and more accurate than 
 previous single-stage methods like [DEKR](https://github.com/HRNet/DEKR) 
 and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation): <br>
 
