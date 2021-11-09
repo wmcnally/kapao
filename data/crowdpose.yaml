@@ -1,9 +1,9 @@
 
 # train and val data as 1) directory: path/images/, 2) file: path/images.txt, or 3) list: [path1/images/, path2/images/]
 path: data/datasets/crowdpose
-labels: yp_labels
-train: yp_labels/img_txt/trainval.txt
-val: yp_labels/img_txt/test.txt
+labels: kp_labels
+train: kp_labels/img_txt/trainval.txt
+val: kp_labels/img_txt/test.txt
 
 train_annotations: crowdpose_trainval.json
 val_annotations: crowdpose_test.json
