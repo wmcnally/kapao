@@ -8,7 +8,7 @@ When not using test-time augmentation, it is much faster and more accurate than
 previous single-stage methods like [DEKR](https://github.com/HRNet/DEKR) 
 and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation): <br>
 
-![alt text](./res/accuracy_latency.pdf)
+![alt text](./res/accuracy_latency.png)
 
 This repository contains the official PyTorch implementation for the paper: <br>
 **Rethinking Keypoint Representations: Modeling Keypoints and Poses as Objects for Multi-Person Human Pose Estimation** (link coming soon).
