@@ -1,7 +1,7 @@
 import sys
 from pathlib import Path
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[1].as_posix())  # add yolo-pose/ to path
+sys.path.append(FILE.parents[1].as_posix())  # add kapao/ to path
 
 import argparse
 from pytube import YouTube
@@ -42,7 +42,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data', type=str, default='data/coco-kp.yaml')
     parser.add_argument('--imgsz', type=int, default=1280)
-    parser.add_argument('--weights', default='kpao_s_coco.pt')
+    parser.add_argument('--weights', default='kapao_s_coco.pt')
     parser.add_argument('--device', default='', help='cuda device, i.e. 0 or cpu')
     parser.add_argument('--half', action='store_true')
     parser.add_argument('--conf-thres', type=float, default=0.5, help='confidence threshold')

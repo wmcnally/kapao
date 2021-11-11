@@ -9,7 +9,7 @@ import torch
 from tqdm import tqdm
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[0].as_posix())  # add kpao/ to path
+sys.path.append(FILE.parents[0].as_posix())  # add kapao/ to path
 
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
@@ -298,7 +298,7 @@ def run(data,
 def parse_opt():
     parser = argparse.ArgumentParser(prog='val.py')
     parser.add_argument('--data', type=str, default='data/coco-kp.yaml', help='dataset.yaml path')
-    parser.add_argument('--weights', default='kpao_s_coco.pt')
+    parser.add_argument('--weights', default='kapao_s_coco.pt')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--imgsz', type=int, default=1280, help='inference size (pixels)')
     parser.add_argument('--task', default='val', help='train, val, test')
