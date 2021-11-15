@@ -36,7 +36,7 @@ PLAYER_ALPHA_POSE = 0.3
 PLAYER_KP_SIZE = 4
 PLAYER_KP_THICK = 4
 PLAYER_SEG_THICK = 4
-FPS_TEXT_SIZE = 4
+FPS_TEXT_SIZE = 3
 
 
 if __name__ == '__main__':
@@ -218,8 +218,7 @@ if __name__ == '__main__':
 
         if args.gif:
             gif_frames.append(cv2.resize(im0, dsize=None, fx=0.25, fy=0.25)[:, :, [2, 1, 0]])
-
-        if not args.display:
+        elif not args.display:
             writer.write(im0)
         else:
             cv2.imshow('', cv2.resize(im0, dsize=None, fx=0.5, fy=0.5))
