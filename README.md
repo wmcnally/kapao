@@ -23,7 +23,7 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 
 ### Inference Demo
 
-This demo runs inference on a slow motion squash video (native frame-rate of 25 FPS). It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
+This demo runs inference on a **slow motion** squash video (native frame-rate of 25 FPS). It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
 
 ![alt text](./res/squash_inference_kapao_s_coco.gif)<br>
 
