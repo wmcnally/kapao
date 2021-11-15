@@ -105,7 +105,7 @@ if __name__ == '__main__':
     if not args.display:
         writer = cv2.VideoWriter(video_name + '.mp4',
                                  cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-        if args.fps:  # tqdm slows down inference
+        if not args.fps:  # tqdm slows down inference
             dataset = tqdm(dataset, desc='Writing inference video', total=n)
 
     t0 = time_sync()
@@ -269,7 +269,7 @@ if __name__ == '__main__':
 
     if args.gif:
         print('Saving GIF...')
-        with imageio.get_writer(video_name + '.gif', mode="I") as writer:
+        with imageio.get_writer(video_name + '.gif', mode="I", fps=fps) as writer:
             for idx, frame in tqdm(enumerate(gif_frames)):
                 writer.append_data(frame)
 
