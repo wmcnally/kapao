@@ -22,11 +22,19 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 6. Download the trained models: `$ sh data/scripts/download_models.sh`
 
 ### Inference Demo
-To display the inference results in real-time: <br> 
-`$ python demos/squash.py --weights kapao_s_coco.pt --imgsz 1280 --display`
 
-Remove the `--display` argument to write an inference video: <br>
-`$ python demos/squash.py --weights kapao_s_coco.pt --imgsz 1280` <br>
+This demo runs inference on a slow motion squash video (native frame-rate of 25 FPS). It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
+
+![alt text](./res/squash_inference_kapao_s_coco.gif)<br>
+
+To display the inference results in real-time: <br> 
+`$ python demos/squash.py --weights kapao_s_coco.pt --display --fps`
+
+To create the GIF above:<br>
+`python demos/squash.py --weights kapao_s_coco.pt --start 42 --end 50 --gif --fps`<br>
+
+**Note:** FPS calculation includes all processing, including inference, plotting / tracking, and image resizing. 
+See script arguments for additional inference options.
 
 ## COCO Experiments
 Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`

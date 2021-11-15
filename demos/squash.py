@@ -15,12 +15,11 @@ import cv2
 import numpy as np
 import yaml
 from tqdm import tqdm
+import imageio
 
 
 VIDEO_NAME = 'Squash MegaRally 176 ReDux - Slow Mo Edition.mp4'
 URL = 'https://www.youtube.com/watch?v=Dy62-eTNvY4&ab_channel=PSASQUASHTV'
-START = 20  # seconds
-END = 80  # seconds
 
 GRAY = (200, 200, 200)
 CROWD_THRES = 450  # max bbox size for crowd classification
@@ -36,6 +35,7 @@ PLAYER_ALPHA_POSE = 0.3
 PLAYER_KP_SIZE = 4
 PLAYER_KP_THICK = 4
 PLAYER_SEG_THICK = 4
+FPS_TEXT_SIZE = 4
 
 
 if __name__ == '__main__':
@@ -55,6 +55,10 @@ if __name__ == '__main__':
     parser.add_argument('--scales', type=float, nargs='+', default=[1])
     parser.add_argument('--flips', type=int, nargs='+', default=[-1])
     parser.add_argument('--display', action='store_true', help='display inference results')
+    parser.add_argument('--fps', action='store_true', help='display fps')
+    parser.add_argument('--gif', action='store_true', help='create fig')
+    parser.add_argument('--start', type=int, default=20, help='start time (s)')
+    parser.add_argument('--end', type=int, default=80, help='end time (s)')
     args = parser.parse_args()
 
     with open(args.data) as f:
@@ -90,16 +94,19 @@ if __name__ == '__main__':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
 
     cap = dataset.cap
-    cap.set(cv2.CAP_PROP_POS_MSEC, START * 1000)
+    cap.set(cv2.CAP_PROP_POS_MSEC, args.start * 1000)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    n = int(fps * (END - START))
+    n = int(fps * (args.end - args.start))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    gif_frames = []
+    video_name = 'squash_inference_{}'.format(osp.splitext(args.weights)[0])
 
     if not args.display:
-        writer = cv2.VideoWriter('squash_inference_{}.mp4'.format(osp.splitext(args.weights)[0]),
+        writer = cv2.VideoWriter(video_name + '.mp4',
                                  cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-        dataset = tqdm(dataset, desc='Writing inference video', total=n)
+        if args.fps:  # tqdm slows down inference
+            dataset = tqdm(dataset, desc='Writing inference video', total=n)
 
     t0 = time_sync()
     for i, (path, img, im0, _) in enumerate(dataset):
@@ -237,9 +244,13 @@ if __name__ == '__main__':
         else:
             t = time_sync() - t1
 
-        if args.display:
-            cv2.putText(im0, '{:.1f} FPS'.format(1 / t), (5, 25),
-                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 255, 255), thickness=2)
+        if args.fps:
+            s = FPS_TEXT_SIZE
+            cv2.putText(im0, '{:.1f} FPS'.format(1 / t), (5*s, 25*s),
+                        cv2.FONT_HERSHEY_SIMPLEX, s, (255, 255, 255), thickness=2*s)
+
+        if args.gif:
+            gif_frames.append(cv2.resize(im0, dsize=None, fx=0.25, fy=0.25)[:, :, [2, 1, 0]])
 
         if not args.display:
             writer.write(im0)
@@ -255,6 +266,12 @@ if __name__ == '__main__':
     cap.release()
     if not args.display:
         writer.release()
+
+    if args.gif:
+        print('Saving GIF...')
+        with imageio.get_writer(video_name + '.gif', mode="I") as writer:
+            for idx, frame in tqdm(enumerate(gif_frames)):
+                writer.append_data(frame)
 
 
 
