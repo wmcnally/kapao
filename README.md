@@ -26,7 +26,7 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 **Note:** FPS calculations includes **all processing**, including inference, plotting / tracking, image resizing, etc. 
 See demo script arguments for inference options.
 
-#### Flash Mob Video Demo
+#### Flash Mob Demo
 This demo runs inference on a 720p dance video (native frame-rate of 25 FPS).
 
 ![alt text](./res/flash_mob_inference_kapao_s_coco.gif)<br>
@@ -37,8 +37,8 @@ To display the inference results in real-time: <br>
 To create the GIF above:<br>
 `$ python demos/flash_mob.py --weights kapao_s_coco.pt --start 188 --end 196 --gif --fps`<br>
 
-#### Slow-mo Squash Video Demo
-This demo runs inference on a 1080p **slow motion** squash video (native frame-rate of 25 FPS). It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
+#### Squash Demo
+This demo runs inference on a 1080p slow motion squash video (native frame-rate of 25 FPS). It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
 
 ![alt text](./res/squash_inference_kapao_s_coco.gif)<br>
 
