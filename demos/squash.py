@@ -7,7 +7,7 @@ import argparse
 from pytube import YouTube
 import os.path as osp
 from utils.torch_utils import select_device, time_sync
-from utils.general import check_img_size, non_max_suppression_kp, scale_coords
+from utils.general import check_img_size
 from utils.datasets import LoadImages
 from models.experimental import attempt_load
 import torch
@@ -16,6 +16,7 @@ import numpy as np
 import yaml
 from tqdm import tqdm
 import imageio
+from val import run_nms, post_process_batch
 
 
 VIDEO_NAME = 'Squash MegaRally 176 ReDux - Slow Mo Edition.mp4'
@@ -62,20 +63,26 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     with open(args.data) as f:
-        data = yaml.safe_load(f)  # load hyps dict
+        data = yaml.safe_load(f)  # load data dict
 
-    args.flips = [None if f == -1 else f for f in args.flips]
-    use_kp_dets = not args.no_kp_dets
+    # add inference settings to data dict
+    data['imgsz'] = args.imgsz
+    data['conf_thres'] = args.conf_thres
+    data['iou_thres'] = args.iou_thres
+    data['use_kp_dets'] = not args.no_kp_dets
+    data['conf_thres_kp'] = args.conf_thres_kp
+    data['iou_thres_kp'] = args.iou_thres_kp
+    data['conf_thres_kp_person'] = args.conf_thres_kp_person
+    data['overwrite_tol'] = args.overwrite_tol
+    data['scales'] = args.scales
+    data['flips'] = [None if f == -1 else f for f in args.flips]
 
-    yt = YouTube(URL)
     if not osp.isfile(VIDEO_NAME):
-        print('Downloading demo video...')
-        yt.streams \
-            .filter(progressive=False, file_extension='mp4') \
-            .order_by('resolution') \
-            .desc() \
-            .first() \
-            .download()
+        yt = YouTube(URL)
+        # [print(s) for s in yt.streams]
+        stream = [s for s in yt.streams if s.itag == 137][0]  # 1080p, non-progressive
+        print('Downloading squash demo video...')
+        stream.download()
         print('Done.')
 
     device = select_device(args.device, batch_size=1)
@@ -105,7 +112,7 @@ if __name__ == '__main__':
     if not args.display:
         writer = cv2.VideoWriter(video_name + '.mp4',
                                  cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
-        if not args.fps:  # tqdm slows down inference
+        if not args.fps:  # tqdm might slows down inference
             dataset = tqdm(dataset, desc='Writing inference video', total=n)
 
     t0 = time_sync()
@@ -116,128 +123,88 @@ if __name__ == '__main__':
         if len(img.shape) == 3:
             img = img[None]  # expand for batch dim
 
-        out = model(img, augment=True, kp_flip=data['kp_flip'], scales=args.scales, flips=args.flips)[0]
+        out = model(img, augment=True, kp_flip=data['kp_flip'], scales=data['scales'], flips=data['flips'])[0]
+        person_dets, kp_dets = run_nms(data, out)
+        bboxes, poses, _, _, _ = post_process_batch(data, img, [], [[im0.shape[:2]]], person_dets, kp_dets)
 
-        if args.iou_thres == args.iou_thres_kp and args.conf_thres_kp >= args.conf_thres:
-            # Combined NMS saves ~0.2 ms / image
-            dets = non_max_suppression_kp(out, args.conf_thres, args.iou_thres, num_coords=data['num_coords'])
-            person_dets = [d[d[:, 5] == 0] for d in dets]
-            kp_dets = [d[d[:, 4] >= args.conf_thres_kp] for d in dets]
-            kp_dets = [d[d[:, 5] > 0] for d in kp_dets]
-        else:
-            person_dets = non_max_suppression_kp(out, args.conf_thres, args.iou_thres,
-                                                 classes=[0],
-                                                 num_coords=data['num_coords'])
+        bboxes = np.array(bboxes)
+        poses = np.array(poses)
 
-            kp_dets = non_max_suppression_kp(out, args.conf_thres_kp, args.iou_thres_kp,
-                                             classes=list(range(1, 1 + len(data['kp_flip']))),
-                                             num_coords=data['num_coords'])
+        im0_copy = im0.copy()
+        player_idx = []
 
-        pd = person_dets[0]
-        kpd = kp_dets[0]
-
-        nd = pd.shape[0]
-        nkp = kpd.shape[0]
-
-        if nd:
-            scores = pd[:, 4].cpu().numpy()  # person detection score
-            bboxes = scale_coords(img.shape[2:], pd[:, :4], im0.shape[:2]).round().cpu().numpy()
-            poses = scale_coords(img.shape[2:], pd[:, -data['num_coords']:], im0.shape[:2]).round().cpu().numpy()
-            poses = poses.reshape((nd, -data['num_coords'], 2))
-            poses = np.concatenate((poses, np.zeros((nd, poses.shape[1], 1))), axis=-1)
-
-            if use_kp_dets and nkp:
-                mask = scores > args.conf_thres_kp_person
-                poses_mask = poses[mask]
-
-                if len(poses_mask):
-                    kpd[:, :4] = scale_coords(img.shape[2:], kpd[:, :4], im0.shape[:2])
-                    kpd = kpd[:, :6].cpu()
-
-                    for x1, y1, x2, y2, conf, cls in kpd:
-                        x, y = np.mean((x1, x2)), np.mean((y1, y2))
-                        pose_kps = poses_mask[:, int(cls - 1)]
-                        dist = np.linalg.norm(pose_kps[:, :2] - np.array([[x, y]]), axis=-1)
-                        kp_match = np.argmin(dist)
-                        if conf > pose_kps[kp_match, 2] and dist[kp_match] < args.overwrite_tol:
-                            pose_kps[kp_match] = [x, y, conf]
-                    poses[mask] = poses_mask
-
-            im0_copy = im0.copy()
-            player_idx = []
-
-            # DRAW CROWD POSES
-            for j, (bbox, pose) in enumerate(zip(bboxes, poses)):
-                x1, y1, x2, y2 = bbox
-                size = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-                if size < CROWD_THRES:
-                    cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), GRAY, thickness=2)
-                    for x, y, _ in pose[:5]:
-                        cv2.circle(im0_copy, (int(x), int(y)), CROWD_KP_SIZE, GRAY, CROWD_KP_THICK)
-                    for seg in data['segments'].values():
-                        pt1 = (int(pose[seg[0], 0]), int(pose[seg[0], 1]))
-                        pt2 = (int(pose[seg[1], 0]), int(pose[seg[1], 1]))
-                        cv2.line(im0_copy, pt1, pt2, GRAY, CROWD_SEG_THICK)
-                else:
-                    player_idx.append(j)
-            im0 = cv2.addWeighted(im0, CROWD_ALPHA, im0_copy, 1 - CROWD_ALPHA, gamma=0)
-
-            # DRAW PLAYER POSES
-            player_bboxes = bboxes[player_idx][:2]
-            player_poses = poses[player_idx][:2]
-
-            def draw_player_poses(im0, missing=-1):
-                for j, (bbox, pose, color) in enumerate(zip(
-                        player_bboxes[[orange_player, blue_player]],
-                        player_poses[[orange_player, blue_player]],
-                        [ORANGE, BLUE])):
-                    if j == missing:
-                        continue
-                    im0_copy = im0.copy()
-                    x1, y1, x2, y2 = bbox
-                    cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness=-1)
-                    im0 = cv2.addWeighted(im0, PLAYER_ALPHA_BOX, im0_copy, 1 - PLAYER_ALPHA_BOX, gamma=0)
-                    im0_copy = im0.copy()
-                    for x, y, _ in pose:
-                        cv2.circle(im0_copy, (int(x), int(y)), PLAYER_KP_SIZE, color, PLAYER_KP_THICK)
-                    for seg in data['segments'].values():
-                        pt1 = (int(pose[seg[0], 0]), int(pose[seg[0], 1]))
-                        pt2 = (int(pose[seg[1], 0]), int(pose[seg[1], 1]))
-                        cv2.line(im0_copy, pt1, pt2, color, PLAYER_SEG_THICK)
-                    im0 = cv2.addWeighted(im0, PLAYER_ALPHA_POSE, im0_copy, 1 - PLAYER_ALPHA_POSE, gamma=0)
-                return im0
-
-            if i == 0:
-                # orange player on left at start
-                orange_player = np.argmin(player_bboxes[:, 0])
-                blue_player = int(not orange_player)
-                im0 = draw_player_poses(im0)
+        # DRAW CROWD POSES
+        for j, (bbox, pose) in enumerate(zip(bboxes, poses)):
+            x1, y1, x2, y2 = bbox
+            size = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
+            if size < CROWD_THRES:
+                cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), GRAY, thickness=2)
+                for x, y, _ in pose[:5]:
+                    cv2.circle(im0_copy, (int(x), int(y)), CROWD_KP_SIZE, GRAY, CROWD_KP_THICK)
+                for seg in data['segments'].values():
+                    pt1 = (int(pose[seg[0], 0]), int(pose[seg[0], 1]))
+                    pt2 = (int(pose[seg[1], 0]), int(pose[seg[1], 1]))
+                    cv2.line(im0_copy, pt1, pt2, GRAY, CROWD_SEG_THICK)
             else:
-                # simple player tracking based on frame-to-frame pose difference
-                dist = []
-                for pose in poses_last:
-                    dist.append(np.mean(np.linalg.norm(player_poses[0, :, :2] - pose[:, :2], axis=-1)))
-                if np.argmin(dist) == 0:
-                    orange_player = 0
-                else:
-                    orange_player = 1
-                blue_player = int(not orange_player)
+                player_idx.append(j)
+        im0 = cv2.addWeighted(im0, CROWD_ALPHA, im0_copy, 1 - CROWD_ALPHA, gamma=0)
 
-                # if only one player detected, find which player is missing
-                missing = -1
-                if len(player_poses) == 1:
-                    if orange_player == 0:  # missing blue player
-                        player_poses = np.concatenate((player_poses, poses_last[1:]), axis=0)
-                        player_bboxes = np.concatenate((player_bboxes, bboxes_last[1:]), axis=0)
-                        missing = 1
-                    else:  # missing orange player
-                        player_poses = np.concatenate((player_poses, poses_last[:1]), axis=0)
-                        player_bboxes = np.concatenate((player_bboxes, bboxes_last[:1]), axis=0)
-                        missing = 0
-                im0 = draw_player_poses(im0, missing)
+        # DRAW PLAYER POSES
+        player_bboxes = bboxes[player_idx][:2]
+        player_poses = poses[player_idx][:2]
 
-            bboxes_last = player_bboxes[[orange_player, blue_player]]
-            poses_last = player_poses[[orange_player, blue_player]]
+        def draw_player_poses(im0, missing=-1):
+            for j, (bbox, pose, color) in enumerate(zip(
+                    player_bboxes[[orange_player, blue_player]],
+                    player_poses[[orange_player, blue_player]],
+                    [ORANGE, BLUE])):
+                if j == missing:
+                    continue
+                im0_copy = im0.copy()
+                x1, y1, x2, y2 = bbox
+                cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), color, thickness=-1)
+                im0 = cv2.addWeighted(im0, PLAYER_ALPHA_BOX, im0_copy, 1 - PLAYER_ALPHA_BOX, gamma=0)
+                im0_copy = im0.copy()
+                for x, y, _ in pose:
+                    cv2.circle(im0_copy, (int(x), int(y)), PLAYER_KP_SIZE, color, PLAYER_KP_THICK)
+                for seg in data['segments'].values():
+                    pt1 = (int(pose[seg[0], 0]), int(pose[seg[0], 1]))
+                    pt2 = (int(pose[seg[1], 0]), int(pose[seg[1], 1]))
+                    cv2.line(im0_copy, pt1, pt2, color, PLAYER_SEG_THICK)
+                im0 = cv2.addWeighted(im0, PLAYER_ALPHA_POSE, im0_copy, 1 - PLAYER_ALPHA_POSE, gamma=0)
+            return im0
+
+        if i == 0:
+            # orange player on left at start
+            orange_player = np.argmin(player_bboxes[:, 0])
+            blue_player = int(not orange_player)
+            im0 = draw_player_poses(im0)
+        else:
+            # simple player tracking based on frame-to-frame pose difference
+            dist = []
+            for pose in poses_last:
+                dist.append(np.mean(np.linalg.norm(player_poses[0, :, :2] - pose[:, :2], axis=-1)))
+            if np.argmin(dist) == 0:
+                orange_player = 0
+            else:
+                orange_player = 1
+            blue_player = int(not orange_player)
+
+            # if only one player detected, find which player is missing
+            missing = -1
+            if len(player_poses) == 1:
+                if orange_player == 0:  # missing blue player
+                    player_poses = np.concatenate((player_poses, poses_last[1:]), axis=0)
+                    player_bboxes = np.concatenate((player_bboxes, bboxes_last[1:]), axis=0)
+                    missing = 1
+                else:  # missing orange player
+                    player_poses = np.concatenate((player_poses, poses_last[:1]), axis=0)
+                    player_bboxes = np.concatenate((player_bboxes, bboxes_last[:1]), axis=0)
+                    missing = 0
+            im0 = draw_player_poses(im0, missing)
+
+        bboxes_last = player_bboxes[[orange_player, blue_player]]
+        poses_last = player_poses[[orange_player, blue_player]]
 
         if i == 0:
             t = time_sync() - t0

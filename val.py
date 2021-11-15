@@ -44,7 +44,7 @@ def run_nms(data, model_out):
 def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
                        two_stage=False, pad=0, device='cpu', model=None, origins=None):
 
-    batch_poses, batch_scores, batch_ids = [], [], []
+    batch_bboxes, batch_poses, batch_scores, batch_ids = [], [], [], []
     n_fused = np.zeros(data['num_coords'] // 2)
 
     if origins is None:  # used only for two-stage inference so set to 0 if None
@@ -56,8 +56,8 @@ def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
         nkp = kpd.shape[0]
 
         if nd:
-            path, shape = Path(paths[si]), shapes[si][0]
-            img_id = int(osp.splitext(osp.split(path)[-1])[0])
+            path, shape = Path(paths[si]) if len(paths) else '', shapes[si][0]
+            img_id = int(osp.splitext(osp.split(path)[-1])[0]) if path else si
 
             # TWO-STAGE INFERENCE (EXPERIMENTAL)
             if two_stage:
@@ -80,7 +80,7 @@ def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
 
                     out = model(crop_input, augment=True, kp_flip=data['kp_flip'], scales=data['scales'], flips=data['flips'])[0]
                     person_dets, kp_dets = run_nms(data, out)
-                    poses, scores, img_ids, _ = post_process_batch(
+                    _, poses, scores, img_ids, _ = post_process_batch(
                         data, crop_input, paths, [[(h0, w0)]], person_dets, kp_dets, device=device, origins=origins)
 
                     # map back to original image
@@ -95,6 +95,7 @@ def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
             # SINGLE-STAGE INFERENCE
             else:
                 scores = pd[:, 4].cpu().numpy()  # person detection score
+                bboxes = scale_coords(imgs[si].shape[1:], pd[:, :4], shape).round().cpu().numpy()
                 poses = scale_coords(imgs[si].shape[1:], pd[:, -data['num_coords']:], shape).cpu().numpy()
                 poses = poses.reshape((nd, -data['num_coords'], 2))
                 poses = np.concatenate((poses, np.zeros((nd, poses.shape[1], 1))), axis=-1)
@@ -119,11 +120,12 @@ def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
 
                 poses = [p + origin for p in poses]
 
+            batch_bboxes.extend(bboxes)
             batch_poses.extend(poses)
             batch_scores.extend(scores)
             batch_ids.extend([img_id] * len(scores))
 
-    return batch_poses, batch_scores, batch_ids, n_fused
+    return batch_bboxes, batch_poses, batch_scores, batch_ids, n_fused
 
 
 @torch.no_grad()
@@ -174,7 +176,7 @@ def run(data,
         # Data
         data = check_dataset(data)  # check
 
-    # add inference settings to data dict for convenience
+    # add inference settings to data dict
     data['imgsz'] = imgsz
     data['conf_thres'] = conf_thres
     data['iou_thres'] = iou_thres
@@ -241,7 +243,7 @@ def run(data,
         person_dets, kp_dets = run_nms(data, out)
 
         # Fuse keypoint and pose detections
-        poses, scores, img_ids, n_fused_batch = post_process_batch(
+        _, poses, scores, img_ids, n_fused_batch = post_process_batch(
             data, imgs, paths, shapes, person_dets, kp_dets, two_stage, pad, device, model)
 
         t2 += time_sync() - t
