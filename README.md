@@ -22,6 +22,10 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 6. Download the trained models: `$ sh data/scripts/download_models.sh`
 
 ### Inference Demos
+
+**Note:** FPS calculations includes **all processing**, including inference, plotting / tracking, image resizing, etc. 
+See demo script arguments for inference options.
+
 #### Flash Mob Video Demo
 This demo runs inference on a 720p dance video (native frame-rate of 25 FPS).
 
@@ -43,9 +47,6 @@ To display the inference results in real-time: <br>
 
 To create the GIF above:<br>
 `$ python demos/squash.py --weights kapao_s_coco.pt --start 42 --end 50 --gif --fps`<br>
-
-**Note:** FPS calculation includes all processing, including inference, plotting / tracking, and image resizing. 
-See script arguments for additional inference options.
 
 ## COCO Experiments
 Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`
