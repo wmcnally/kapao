@@ -192,7 +192,7 @@ python train.py \
 --noval
 ```
 
-##Acknowledgements
+## Acknowledgements
 This work was supported in part by Compute Canada, the Canada Research Chairs Program, 
 the Natural Sciences and Engineering Research Council of Canada, 
 a Microsoft Azure Grant, and an NVIDIA Hardware Grant.
@@ -226,4 +226,3 @@ Please also consider citing our previous works:
   publisher={IEEE}
 }
 ```
-\
