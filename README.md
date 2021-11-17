@@ -9,7 +9,7 @@ and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation): <
 ![alt text](./res/accuracy_latency.png)
 
 This repository contains the official PyTorch implementation for the paper: <br>
-**Rethinking Keypoint Representations: Modeling Keypoints and Poses as Objects for Multi-Person Human Pose Estimation** (link coming soon).
+[Rethinking Keypoint Representations: Modeling Keypoints and Poses as Objects for Multi-Person Human Pose Estimation](https://arxiv.org/abs/2111.08557).
 
 Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.com/ultralytics/yolov5/tree/5487451).
 
