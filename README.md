@@ -21,6 +21,11 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 5. Install the dependencies: `$ cd kapao && pip install -r requirements.txt`
 6. Download the trained models: `$ sh data/scripts/download_models.sh`
 
+
+### Web Demo
+A web demo is integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio).     See demo: [![Hugging Face Spaces](https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Spaces-blue)](https://huggingface.co/spaces/akhaliq/Kapao)
+
+
 ### Inference Demos
 
 **Note:** FPS calculations includes **all processing**, including inference, plotting / tracking, image resizing, etc. 
