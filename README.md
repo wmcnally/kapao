@@ -49,7 +49,7 @@ To create the GIF above:<br>
 `$ python demos/squash.py --weights kapao_s_coco.pt --start 42 --end 50 --gif --fps`
 
 #### Web Demo
-A [web demo](https://huggingface.co/spaces/akhaliq/Kapao) was integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio) (credit to @AK391). 
+A [web demo](https://huggingface.co/spaces/akhaliq/Kapao) was integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio) (credit to [@AK391](https://github.com/AK391)). 
 It uses KAPAO-S to run CPU inference on short video clips.
 
 ## COCO Experiments
