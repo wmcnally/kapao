@@ -80,7 +80,7 @@ if __name__ == '__main__':
     if not osp.isfile(VIDEO_NAME):
         yt = YouTube(URL)
         # [print(s) for s in yt.streams]
-        stream = [s for s in yt.streams if s.itag == 137][0]  # 1080p, non-progressive
+        stream = [s for s in yt.streams if s.itag == 137][0]  # 1080p, 25 fps
         print('Downloading squash demo video...')
         stream.download()
         print('Done.')

@@ -68,7 +68,7 @@ if __name__ == '__main__':
     if not osp.isfile(VIDEO_NAME):
         yt = YouTube(URL)
         # [print(s) for s in yt.streams]
-        stream = [s for s in yt.streams if s.itag == 136][0]  # 720p, non-progressive
+        stream = [s for s in yt.streams if s.itag == 136][0]  # 720p, 25 fps
         print('Downloading squash demo video...')
         stream.download()
         print('Done.')
@@ -120,8 +120,6 @@ if __name__ == '__main__':
         # DRAW POSES
         for j, (bbox, pose) in enumerate(zip(bboxes, poses)):
             x1, y1, x2, y2 = bbox
-            size = ((x2 - x1) ** 2 + (y2 - y1) ** 2) ** 0.5
-            # if size < 450:
             cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), COLOR, thickness=2)
             for seg in data['segments'].values():
                 pt1 = (int(pose[seg[0], 0]), int(pose[seg[0], 1]))
