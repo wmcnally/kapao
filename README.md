@@ -23,8 +23,8 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 
 ### Inference Demos
 
-**Note:** FPS calculations includes **all processing**, including inference, plotting / tracking, image resizing, etc. 
-See demo script arguments for inference options.
+**Note:** FPS calculations include **all processing** (i.e., including image loading, resizing, inference, plotting / tracking, etc.).
+See demo script arguments for inference options. Reported inference speeds are for a TITAN Xp GPU.
 
 #### Flash Mob Demo
 This demo runs inference on a 720p dance video (native frame-rate of 25 FPS).
@@ -46,7 +46,11 @@ To display the inference results in real-time: <br>
 `$ python demos/squash.py --weights kapao_s_coco.pt --display --fps`
 
 To create the GIF above:<br>
-`$ python demos/squash.py --weights kapao_s_coco.pt --start 42 --end 50 --gif --fps`<br>
+`$ python demos/squash.py --weights kapao_s_coco.pt --start 42 --end 50 --gif --fps`
+
+#### Web Demo
+A [web demo](https://huggingface.co/spaces/akhaliq/Kapao) was integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio) (credit to [@AK391](https://github.com/AK391)). 
+It uses KAPAO-S to run CPU inference on short video clips.
 
 ## COCO Experiments
 Download the COCO dataset:  `$ sh data/scripts/get_coco_kp.sh`
