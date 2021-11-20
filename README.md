@@ -19,7 +19,7 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 3. Activate the environment: `$ conda activate kapao`
 4. Clone this repo: `$ git clone https://github.com/wmcnally/kapao.git`
 5. Install the dependencies: `$ cd kapao && pip install -r requirements.txt`
-6. Download the trained models: `$ sh data/scripts/download_models.sh`
+6. Download the trained models: `$ python data/scripts/download_models.py`
 
 ### Inference Demos
 
