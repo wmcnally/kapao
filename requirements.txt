@@ -33,4 +33,4 @@ pycocotools>=2.0.2  # COCO mAP
 thop  # FLOPs computation
 
 # inference demos
-pytube
+git+https://github.com/baxterisme/pytube  # patched pytube
