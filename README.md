@@ -26,7 +26,7 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 **Note:** FPS calculations include **all processing** (i.e., including image loading, resizing, inference, plotting / tracking, etc.).
 See script arguments for inference options.
 
-------
+---
 
 #### Shuffling Demo
 KAPAO runs fastest on low resolution video with few people in the frame. This demo runs KAPAO-S on a single-person 480p dance video using an input size of 1024. 
@@ -41,7 +41,7 @@ To display the results in real-time: <br>
 To create the GIF above:<br>
 `$ python demos/youtube.py --face --device cpu --gif`
 
-------
+---
 
 #### Flash Mob Demo
 This demo runs KAPAO-S on a 720p flash mob video using an input size of 1280.
@@ -55,7 +55,7 @@ To display the results in real-time: <br>
 To create the GIF above:<br>
 `$ python demos/youtube.py --id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --gif`
 
-------
+---
 
 #### Red Light Green Light
 This demo runs KAPAO-L on a 480p clip from the TV show _Squid Game_ using an input size of 1024.
@@ -70,7 +70,7 @@ To display the results in real-time:<br>
 To create the GIF above:<br>
 `$ python demos/youtube.py --id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --gif`
 
-------
+---
 
 #### Squash Demo
 This demo runs KAPAO-S on a 1080p slow motion squash video. It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
@@ -84,7 +84,7 @@ To display the inference results in real-time: <br>
 To create the GIF above:<br>
 `$ python demos/squash.py --start 42 --end 50 --gif --fps`
 
-------
+---
 
 #### Web Demo
 A [web demo](https://huggingface.co/spaces/akhaliq/Kapao) was integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio) (credit to [@AK391](https://github.com/AK391)). 
