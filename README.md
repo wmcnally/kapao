@@ -21,7 +21,7 @@ Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.c
 5. Install the dependencies: `$ cd kapao && pip install -r requirements.txt`
 6. Download the trained models: `$ python data/scripts/download_models.py`
 
-### Inference Demos
+## Inference Demos
 
 **Note:** FPS calculations include **all processing** (i.e., including image loading, resizing, inference, plotting / tracking, etc.).
 See script arguments for inference options.
