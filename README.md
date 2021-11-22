@@ -28,7 +28,7 @@ See script arguments for inference options.
 
 ---
 
-#### Shuffling Demo
+#### Shuffling
 KAPAO runs fastest on low resolution video with few people in the frame. This demo runs KAPAO-S on a single-person 480p dance video using an input size of 1024. 
 The inference speed is **~9.5 FPS** on our CPU, and **~60 FPS** on our TITAN Xp.
 
@@ -43,7 +43,7 @@ To create the GIF above:<br>
 
 ---
 
-#### Flash Mob Demo
+#### Flash Mob
 This demo runs KAPAO-S on a 720p flash mob video using an input size of 1280.
 
 **GPU inference:**<br>
@@ -72,7 +72,7 @@ To create the GIF above:<br>
 
 ---
 
-#### Squash Demo
+#### Squash
 This demo runs KAPAO-S on a 1080p slow motion squash video. It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
 
 **GPU inference:**<br>
