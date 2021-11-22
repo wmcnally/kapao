@@ -26,6 +26,7 @@ names: [ 'person',
 kp_bbox: 0.05  # keypoint object size (normalized by longest img dim)
 kp_flip: [1, 0, 3, 2, 5, 4, 7, 6, 9, 8, 11, 10, 12, 13]  # for left-right keypoint flipping
 kp_left: [0, 2, 4, 6, 8, 10]  # left keypoints
+kp_face: []
 
 kp_names_short:
   0: 'ls'
