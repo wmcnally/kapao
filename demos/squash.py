@@ -17,6 +17,7 @@ import yaml
 from tqdm import tqdm
 import imageio
 from val import run_nms, post_process_batch
+import gdown
 
 
 VIDEO_NAME = 'Squash MegaRally 176 ReDux - Slow Mo Edition.mp4'
@@ -78,12 +79,18 @@ if __name__ == '__main__':
     data['flips'] = [None if f == -1 else f for f in args.flips]
 
     if not osp.isfile(VIDEO_NAME):
-        yt = YouTube(URL)
-        # [print(s) for s in yt.streams]
-        stream = [s for s in yt.streams if s.itag == 137][0]  # 1080p, 25 fps
-        print('Downloading squash demo video...')
-        stream.download()
-        print('Done.')
+        try:
+            yt = YouTube(URL)
+            # [print(s) for s in yt.streams]
+            stream = [s for s in yt.streams if s.itag == 137][0]  # 1080p, 25 fps
+            print('Downloading squash demo video...')
+            stream.download()
+            print('Done.')
+        except Exception as e:
+            print('Pytube error: {}'.format(e))
+            print('We are working on a patch for pytube...')
+            print('Fetching backup demo video from google drive')
+            gdown.download("https://drive.google.com/uc?id=1S46QDdv0pnU98mNXxechvIVK8qOBFlkl")
 
     device = select_device(args.device, batch_size=1)
     print('Using device: {}'.format(device))

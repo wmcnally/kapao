@@ -17,6 +17,7 @@ from tqdm import tqdm
 import imageio
 from val import run_nms, post_process_batch
 import numpy as np
+import gdown
 
 # youtube id, stream tag, start time, end time
 # shuffle: yBZ0Y2t0ceo, 135, 34, 42
@@ -24,7 +25,11 @@ import numpy as np
 # red light green light: nrchfeybHmw, 135, 56, 72
 
 TAG_RES = {135: '480p', 136: '720p', 137: '1080p'}
-
+DEMO_BACKUP = {
+    'yBZ0Y2t0ceo': ['1XqaKI8-hjmbz97UX9bI6lKxTYj73ztmf', 'yBZ0Y2t0ceo_480p.mp4'],
+    '2DiQUX11YaY': ['1E1azSUE5KXHvCCuFvvM6yUjQDmP3EuSx', '2DiQUX11YaY_720p.mp4'],
+    'nrchfeybHmw': ['1Q8awNjA6W4gePbWE5cSAu83CwjiwD0_w', 'nrchfeybHmw_480p.mp4']
+}
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
@@ -83,12 +88,19 @@ if __name__ == '__main__':
     url = 'https://www.youtube.com/watch?v={}'.format(args.id)
 
     if not osp.isfile(video_name):
-        yt = YouTube(url)
-        # [print(s) for s in yt.streams]
-        stream = [s for s in yt.streams if s.itag == args.tag][0]
-        print('Downloading demo video...')
-        stream.download(filename=video_name)
-        print('Done.')
+        try:
+            yt = YouTube(url)
+            # [print(s) for s in yt.streams]
+            stream = [s for s in yt.streams if s.itag == args.tag][0]
+            print('Downloading demo video...')
+            stream.download(filename=video_name)
+            print('Done.')
+        except Exception as e:
+            print('Pytube error: {}'.format(e))
+            print('We are working on a patch for pytube...')
+            if video_name == DEMO_BACKUP[args.id][1]:
+                print('Fetching backup demo video from google drive')
+                gdown.download("https://drive.google.com/uc?id={}".format(DEMO_BACKUP[args.id][0]))
 
     device = select_device(args.device, batch_size=1)
     print('Using device: {}'.format(device))
