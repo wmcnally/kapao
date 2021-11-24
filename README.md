@@ -38,7 +38,7 @@ To generate the four images in the GIF above:
 1. `$ python demos/image.py --bbox`
 2. `$ python demos/image.py --bbox --pose --face --no-kp-dets`
 3. `$ python demos/image.py --bbox --pose --face --no-kp-dets --kp-bbox`
-4. `$ python demos/image.py --bbox --pose --face`
+4. `$ python demos/image.py --pose --face`
 
 #### Shuffling Video
 KAPAO runs fastest on low resolution video with few people in the frame. This demo runs KAPAO-S on a single-person 480p dance video using an input size of 1024. 
