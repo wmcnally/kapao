@@ -101,6 +101,8 @@ if __name__ == '__main__':
             if video_name == DEMO_BACKUP[args.id][1]:
                 print('Fetching backup demo video from google drive')
                 gdown.download("https://drive.google.com/uc?id={}".format(DEMO_BACKUP[args.id][0]))
+            else:
+                sys.exit()
 
     device = select_device(args.device, batch_size=1)
     print('Using device: {}'.format(device))
