@@ -1,10 +1,14 @@
 # KAPAO (Keypoints and Poses as Objects)
 
-KAPAO is an efficient single-stage multi-person human pose estimation model that models 
-**k**eypoints **a**nd **p**oses **a**s **o**bjects within a dense anchor-based detection framework. 
+KAPAO is an efficient single-stage multi-person human pose estimation method that models 
+**k**eypoints **a**nd **p**oses **a**s **o**bjects within a dense anchor-based detection framework.
+KAPAO simultaneously detects _pose objects_ and _keypoint objects_ and fuses the detections to predict human poses:
+
+![alt text](./res/kapao_inference.gif)
+
 When not using test-time augmentation (TTA), KAPAO is much faster and more accurate than 
 previous single-stage methods like [DEKR](https://github.com/HRNet/DEKR) 
-and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation): <br>
+and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation):
 
 ![alt text](./res/accuracy_latency.png)
 
@@ -30,7 +34,6 @@ See script arguments for inference options.
 
 #### Static Image
 
-![alt text](./res/kapao_inference.gif)<br>
 To generate the four images in the GIF above:
 1. `$ python demos/image.py --bbox`
 2. `$ python demos/image.py --bbox --pose --face --no-kp-dets`
