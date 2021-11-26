@@ -46,7 +46,7 @@ if __name__ == '__main__':
     parser.add_argument('--gif', action='store_true', help='create gif')
     parser.add_argument('--gif-size', type=int, nargs='+', default=[480, 270])
     parser.add_argument('--start', type=int, default=34, help='start time (s)')
-    parser.add_argument('--end', type=int, default=42, help='end time (s)')
+    parser.add_argument('--end', type=int, default=42, help='end time (s), -1 for remainder of video')
     parser.add_argument('--kp-size', type=int, default=2, help='keypoint circle size')
     parser.add_argument('--kp-thick', type=int, default=2, help='keypoint circle thickness')
     parser.add_argument('--line-thick', type=int, default=3, help='line thickness')
@@ -128,7 +128,7 @@ if __name__ == '__main__':
     cap.set(cv2.CAP_PROP_POS_MSEC, args.start * 1000)
     fps = cap.get(cv2.CAP_PROP_FPS)
     if args.end == -1:
-        n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) - fps * args.start)
     else:
         n = int(fps * (args.end - args.start))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
@@ -205,7 +205,7 @@ if __name__ == '__main__':
             csv_writer.writerow(csv_row)
 
         t1 = time_sync()
-        if args.end > 0 and i == n - 1:
+        if i == n - 1:
             break
 
     cv2.destroyAllWindows()
