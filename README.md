@@ -48,10 +48,10 @@ The inference speed is **~9.5 FPS** on our CPU, and **~60 FPS** on our TITAN Xp.
 ![alt text](./res/yBZ0Y2t0ceo_480p_kapao_s_coco_cpu.gif)<br>
 
 To display the results in real-time: <br> 
-`$ python demos/youtube.py --face --display`
+`$ python demos/video.py --face --display`
 
 To create the GIF above:<br>
-`$ python demos/youtube.py --face --device cpu --gif`
+`$ python demos/video.py --face --device cpu --gif`
 
 ---
 
@@ -62,10 +62,10 @@ This demo runs KAPAO-S on a 720p flash mob video using an input size of 1280.
 ![alt text](./res/2DiQUX11YaY_720p_kapao_s_coco_gpu.gif)<br>
 
 To display the results in real-time: <br> 
-`$ python demos/youtube.py --id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --display`
+`$ python demos/video.py --yt-id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --display`
 
 To create the GIF above:<br>
-`$ python demos/youtube.py --id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --gif`
+`$ python demos/video.py --yt-id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --gif`
 
 ---
 
@@ -77,10 +77,10 @@ The plotted poses constitute keypoint objects only.
 ![alt text](./res/nrchfeybHmw_480p_kapao_l_coco_gpu.gif)<br>
 
 To display the results in real-time:<br>
-`$ python demos/youtube.py --id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --display`
+`$ python demos/video.py --yt-id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --display`
 
 To create the GIF above:<br>
-`$ python demos/youtube.py --id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --gif`
+`$ python demos/video.py --yt-id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --gif`
 
 ---
 

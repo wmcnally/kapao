@@ -18,6 +18,7 @@ import imageio
 from val import run_nms, post_process_batch
 import numpy as np
 import gdown
+import csv
 
 # youtube id, stream tag, start time, end time
 # shuffle: yBZ0Y2t0ceo, 135, 34, 42
@@ -35,7 +36,8 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     # video options
-    parser.add_argument('--id', default='yBZ0Y2t0ceo', help='youtube url id')
+    parser.add_argument('-p', '--video-path', default='', help='path to video file')
+    parser.add_argument('--yt-id', default='yBZ0Y2t0ceo', help='youtube url id')
     parser.add_argument('--tag', type=int, default=135, help='stream tag, 137=1080p, 136=720p, 135=480p')
     parser.add_argument('--color', type=int, nargs='+', default=[255, 255, 255], help='pose color')
     parser.add_argument('--face', action='store_true', help='plot face keypoints')
@@ -50,6 +52,7 @@ if __name__ == '__main__':
     parser.add_argument('--line-thick', type=int, default=3, help='line thickness')
     parser.add_argument('--alpha', type=float, default=0.4, help='pose alpha')
     parser.add_argument('--kp-obj', action='store_true', help='plot keypoint objects only')
+    parser.add_argument('--csv', action='store_true', help='write results so csv file')
 
     # model options
     parser.add_argument('--data', type=str, default='data/coco-kp.yaml')
@@ -84,25 +87,27 @@ if __name__ == '__main__':
     data['scales'] = args.scales
     data['flips'] = [None if f == -1 else f for f in args.flips]
 
-    video_name = args.id + '_' + TAG_RES[args.tag] + '.mp4'
-    url = 'https://www.youtube.com/watch?v={}'.format(args.id)
+    video_path = args.video_path
+    if not video_path:
+        video_path = args.yt_id + '_' + TAG_RES[args.tag] + '.mp4'
+        url = 'https://www.youtube.com/watch?v={}'.format(args.yt_id)
 
-    if not osp.isfile(video_name):
-        try:
-            yt = YouTube(url)
-            # [print(s) for s in yt.streams]
-            stream = [s for s in yt.streams if s.itag == args.tag][0]
-            print('Downloading demo video...')
-            stream.download(filename=video_name)
-            print('Done.')
-        except Exception as e:
-            print('Pytube error: {}'.format(e))
-            print('We are working on a patch for pytube...')
-            if video_name == DEMO_BACKUP[args.id][1]:
-                print('Fetching backup demo video from google drive')
-                gdown.download("https://drive.google.com/uc?id={}".format(DEMO_BACKUP[args.id][0]))
-            else:
-                sys.exit()
+        if not osp.isfile(video_path):
+            try:
+                yt = YouTube(url)
+                # [print(s) for s in yt.streams]
+                stream = [s for s in yt.streams if s.itag == args.tag][0]
+                print('Downloading demo video...')
+                stream.download(filename=video_path)
+                print('Done.')
+            except Exception as e:
+                print('Pytube error: {}'.format(e))
+                print('We are working on a patch for pytube...')
+                if video_path == DEMO_BACKUP[args.yt_id][1]:
+                    print('Fetching backup demo video from google drive')
+                    gdown.download("https://drive.google.com/uc?id={}".format(DEMO_BACKUP[args.yt_id][0]))
+                else:
+                    sys.exit()
 
     device = select_device(args.device, batch_size=1)
     print('Using device: {}'.format(device))
@@ -114,7 +119,7 @@ if __name__ == '__main__':
     stride = int(model.stride.max())  # model stride
 
     imgsz = check_img_size(args.imgsz, s=stride)  # check image size
-    dataset = LoadImages('./{}'.format(video_name), img_size=imgsz, stride=stride, auto=True)
+    dataset = LoadImages(video_path, img_size=imgsz, stride=stride, auto=True)
 
     if device.type != 'cpu':
         model(torch.zeros(1, 3, imgsz, imgsz).to(device).type_as(next(model.parameters())))  # run once
@@ -122,16 +127,22 @@ if __name__ == '__main__':
     cap = dataset.cap
     cap.set(cv2.CAP_PROP_POS_MSEC, args.start * 1000)
     fps = cap.get(cv2.CAP_PROP_FPS)
-    n = int(fps * (args.end - args.start))
+    if args.end == -1:
+        n = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+    else:
+        n = int(fps * (args.end - args.start))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     gif_frames = []
-    out_name = '{}_{}_{}'.format(osp.splitext(video_name)[0], osp.splitext(args.weights)[0],
+    out_path = '{}_{}_{}'.format(osp.splitext(video_path)[0], osp.splitext(args.weights)[0],
                                  args.device if args.device == 'cpu' else 'gpu')
+    if args.csv:
+        f = open(out_path + '.csv', 'w')
+        csv_writer = csv.writer(f)
 
     write_video = not args.display and not args.gif
     if write_video:
-        writer = cv2.VideoWriter(out_name + '.mp4',
+        writer = cv2.VideoWriter(out_path + '.mp4',
                                  cv2.VideoWriter_fourcc(*'mp4v'), fps, (w, h))
 
     dataset = tqdm(dataset, desc='Running inference', total=n)
@@ -151,9 +162,13 @@ if __name__ == '__main__':
         im0_copy = im0.copy()
 
         # DRAW POSES
+        csv_row = []
         for j, (bbox, pose) in enumerate(zip(bboxes, poses)):
             x1, y1, x2, y2 = bbox
             cv2.rectangle(im0_copy, (int(x1), int(y1)), (int(x2), int(y2)), args.color, thickness=1)
+            if args.csv:
+                for x, y, c in pose:
+                    csv_row.extend([x, y, c])
             if args.face:
                 for x, y, c in pose[data['kp_face']]:
                     if not args.kp_obj or c:
@@ -186,8 +201,11 @@ if __name__ == '__main__':
             cv2.imshow('', im0)
             cv2.waitKey(1)
 
+        if args.csv:
+            csv_writer.writerow(csv_row)
+
         t1 = time_sync()
-        if i == n - 1:
+        if args.end > 0 and i == n - 1:
             break
 
     cv2.destroyAllWindows()
@@ -197,9 +215,11 @@ if __name__ == '__main__':
 
     if args.gif:
         print('Saving GIF...')
-        with imageio.get_writer(out_name + '.gif', mode="I", fps=fps) as writer:
+        with imageio.get_writer(out_path + '.gif', mode="I", fps=fps) as writer:
             for idx, frame in tqdm(enumerate(gif_frames)):
                 writer.append_data(frame)
 
+    if args.csv:
+        f.close()
 
 
