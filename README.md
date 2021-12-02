@@ -9,7 +9,7 @@ and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation): <
 ![alt text](./res/accuracy_latency.png)
 
 This repository contains the official PyTorch implementation for the paper: <br>
-[Rethinking Keypoint Representations: Modeling Keypoints and Poses as Objects for Multi-Person Human Pose Estimation](https://arxiv.org/abs/2111.08557).
+Rethinking Keypoint Representations: Modeling Keypoints and Poses as Objects for Multi-Person Human Pose Estimation.
 
 Our code was forked from ultralytics/yolov5 at commit [5487451](https://github.com/ultralytics/yolov5/tree/5487451).
 
@@ -87,7 +87,7 @@ To create the GIF above:<br>
 ---
 
 #### Web Demo
-A [web demo](https://huggingface.co/spaces/akhaliq/Kapao) was integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio) (credit to [@AK391](https://github.com/AK391)). 
+A web demo was integrated to [Huggingface Spaces](https://huggingface.co/spaces) with [Gradio](https://github.com/gradio-app/gradio) (credit to [@AK391](https://github.com/AK391)). 
 It uses KAPAO-S to run CPU inference on short video clips.
 
 
