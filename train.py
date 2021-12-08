@@ -453,7 +453,7 @@ def parse_opt(known=False):
     parser.add_argument('--patience', type=int, default=100, help='EarlyStopping patience (epochs without improvement)')
     parser.add_argument('--val-scales', type=float, nargs='+', default=[1])
     parser.add_argument('--val-flips', type=int, nargs='+', default=[-1])
-    parser.add_argument('--autobalance', action='store_true', help='Learn keypoint and object loss scaling')
+    parser.add_argument('--autobalance', action='store_true', help='Learn keypoint and object loss scaling (experimental)')
     opt = parser.parse_known_args()[0] if known else parser.parse_args()
     return opt
 
