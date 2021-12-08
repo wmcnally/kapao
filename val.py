@@ -115,7 +115,8 @@ def post_process_batch(data, imgs, paths, shapes, person_dets, kp_dets,
                             kp_match = np.argmin(dist)
                             if conf > pose_kps[kp_match, 2] and dist[kp_match] < data['overwrite_tol']:
                                 pose_kps[kp_match] = [x, y, conf]
-                                n_fused[int(cls - 1)] += 1
+                                if data['count_fused']:
+                                    n_fused[int(cls - 1)] += 1
                         poses[mask] = poses_mask
 
                 poses = [p + origin for p in poses]
@@ -149,11 +150,12 @@ def run(data,
         model=None,
         dataloader=None,
         compute_loss=None,
+        count_fused=False,
         two_stage=False,
         pad=0
         ):
 
-    if two_stage:
+    if two_stage:  # EXPERIMENTAL
         assert batch_size == 1, 'Batch size must be set to 1 for two-stage processing'
         assert conf_thres >= 0.01, 'Confidence threshold must be >= 0.01 for two-stage processing'
         assert not rect, 'Cannot use rectangular inference with two-stage processing'
@@ -187,6 +189,7 @@ def run(data,
     data['overwrite_tol'] = overwrite_tol
     data['scales'] = scales
     data['flips'] = flips
+    data['count_fused'] = count_fused
 
     is_coco = 'coco' in data['path']
     if is_coco:
@@ -248,7 +251,8 @@ def run(data,
 
         t2 += time_sync() - t
         seen += len(imgs)
-        n_fused += n_fused_batch
+        if count_fused:
+            n_fused += n_fused_batch
 
         for i, (pose, score, img_id) in enumerate(zip(poses, scores, img_ids)):
             json_dump.append({
@@ -292,7 +296,8 @@ def run(data,
         os.rename(json_path, osp.splitext(json_path)[0] + '_ap{:.4f}.json'.format(mAP))
         shape = (batch_size, 3, imgsz, imgsz)
         print(f'Speed: %.3fms pre-process, %.3fms inference, %.3fms NMS per image at shape {shape}' % t)
-        print('Keypoint Objects Fused:', n_fused)
+        if count_fused:
+            print('Keypoint Objects Fused:', n_fused)
     model.float()  # for training
     return (mp, mr, map50, mAP, *(loss.cpu() / len(dataloader)).tolist()), np.zeros(nc), t  # for compatibility with train
 
@@ -316,6 +321,7 @@ def parse_opt():
     parser.add_argument('--flips', type=int, nargs='+', default=[-1])
     parser.add_argument('--rect', action='store_true', help='rectangular input image')
     parser.add_argument('--half', action='store_true', help='use FP16 half-precision inference')
+    parser.add_argument('--count-fused', action='store_true', help='count the number of fused keypoint objects')
     parser.add_argument('--two-stage', action='store_true', help='use two-stage inference (experimental)')
     parser.add_argument('--pad', type=int, default=0, help='padding for two-stage inference')
     opt = parser.parse_args()
