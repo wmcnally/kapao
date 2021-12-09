@@ -61,6 +61,7 @@ if __name__ == '__main__':
     data['overwrite_tol'] = args.overwrite_tol
     data['scales'] = args.scales
     data['flips'] = [None if f == -1 else f for f in args.flips]
+    data['count_fused'] = False
 
     device = select_device(args.device, batch_size=1)
     print('Using device: {}'.format(device))

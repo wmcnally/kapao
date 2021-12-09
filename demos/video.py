@@ -86,6 +86,7 @@ if __name__ == '__main__':
     data['overwrite_tol'] = args.overwrite_tol
     data['scales'] = args.scales
     data['flips'] = [None if f == -1 else f for f in args.flips]
+    data['count_fused'] = False
 
     video_path = args.video_path
     if not video_path:

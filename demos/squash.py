@@ -77,6 +77,7 @@ if __name__ == '__main__':
     data['overwrite_tol'] = args.overwrite_tol
     data['scales'] = args.scales
     data['flips'] = [None if f == -1 else f for f in args.flips]
+    data['count_fused'] = False
 
     if not osp.isfile(VIDEO_NAME):
         try:
