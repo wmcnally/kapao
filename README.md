@@ -55,6 +55,19 @@ To create the GIF above:<br>
 
 ---
 
+#### Depth Video
+Pose objects generalize well and can even be detected in depth video. 
+Here, KAPAO-S was run on a depth video from a fencing action recognition dataset ([paper](https://ieeexplore.ieee.org/abstract/document/8076041?casa_token=Zvm7dLIr1rYAAAAA:KrqtVl3NXrJZn05Eb4KGMio-18VPHc3uyDJZSiNJyI7f7oHQ5V2iwB7bK4mCJCmN83NrRl4P), [dataset](https://home.agh.edu.pl/~fmal/ffd/)). 
+
+![alt text](./res/2016-01-04_21-33-35_Depth_kapao_s_coco_gpu.gif)<br>
+
+The depth video above can be downloaded directly from [here](https://drive.google.com/file/d/1n4so5WN6snyCYxeUk4xX1glADqQuitXP/view?usp=sharing).
+To create the GIF above:<br>
+`$ python demos/video.py -p 2016-01-04_21-33-35_Depth.avi --face --start 0 --end -1 --gif --gif-size 480 360`
+
+
+---
+
 #### Flash Mob Video
 This demo runs KAPAO-S on a 720p flash mob video using an input size of 1280.
 
