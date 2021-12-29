@@ -233,7 +233,7 @@ python train.py \
 --img 1280 \
 --batch 72 \
 --epochs 300 \
---data data/coco-kp.yaml \
+--data data/crowdpose.yaml \
 --hyp data/hyps/hyp.kp-p6.yaml \
 --val-scales 1 \
 --val-flips -1 \
