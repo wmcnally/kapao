@@ -7,8 +7,11 @@ KAPAO simultaneously detects _pose objects_ and _keypoint objects_ and fuses the
 ![alt text](./res/kapao_inference.gif)
 
 When not using test-time augmentation (TTA), KAPAO is much faster and more accurate than 
-previous single-stage methods like [DEKR](https://github.com/HRNet/DEKR) 
-and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation):
+previous single-stage methods like 
+[DEKR](https://github.com/HRNet/DEKR), 
+[HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation),
+[HigherHRNet + SWAHR](https://github.com/greatlog/SWAHR-HumanPose), and
+[CenterGroup](https://github.com/dvl-tum/center-group):
 
 ![alt text](./res/accuracy_latency.png)
 
