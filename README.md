@@ -60,7 +60,7 @@ To create the GIF above:<br>
 
 #### Depth Video
 Pose objects generalize well and can even be detected in depth video. 
-Here, KAPAO-S was run on a depth video from a fencing action recognition dataset ([paper](https://ieeexplore.ieee.org/abstract/document/8076041?casa_token=Zvm7dLIr1rYAAAAA:KrqtVl3NXrJZn05Eb4KGMio-18VPHc3uyDJZSiNJyI7f7oHQ5V2iwB7bK4mCJCmN83NrRl4P), [dataset](https://home.agh.edu.pl/~fmal/ffd/)). 
+Here, KAPAO-S was run on a depth video from a [fencing action recognition dataset](https://ieeexplore.ieee.org/abstract/document/8076041?casa_token=Zvm7dLIr1rYAAAAA:KrqtVl3NXrJZn05Eb4KGMio-18VPHc3uyDJZSiNJyI7f7oHQ5V2iwB7bK4mCJCmN83NrRl4P). 
 
 ![alt text](./res/2016-01-04_21-33-35_Depth_kapao_s_coco_gpu.gif)<br>
 
