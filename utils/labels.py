@@ -9,7 +9,7 @@ def write_kp_labels(data):
     assert not osp.isdir(osp.join(data['path'], data['labels'])), \
         'Labels already generated. Remove or choose new name for labels.'
 
-    is_coco = 'coco' in data['path']
+    is_coco = 'crowdpose' not in data['path']
     if is_coco:
         from pycocotools.coco import COCO
     else:
