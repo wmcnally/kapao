@@ -288,6 +288,8 @@ def run(data,
         coco = COCO(annot)
         result = coco.loadRes(json_path)
         eval = COCOeval(coco, result, iouType='keypoints')
+        if 'oks_sigmas' in data:
+            eval.params.kpt_oks_sigmas = data['oks_sigmas']
         eval.evaluate()
         eval.accumulate()
         eval.summarize()
