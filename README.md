@@ -1,10 +1,17 @@
 # KAPAO (Keypoints and Poses as Objects)
 
-KAPAO is an efficient single-stage multi-person human pose estimation model that models 
-**k**eypoints **a**nd **p**oses **a**s **o**bjects within a dense anchor-based detection framework. 
+KAPAO is an efficient single-stage multi-person human pose estimation method that models 
+**k**eypoints **a**nd **p**oses **a**s **o**bjects within a dense anchor-based detection framework.
+KAPAO simultaneously detects _pose objects_ and _keypoint objects_ and fuses the detections to predict human poses:
+
+![alt text](./res/kapao_inference.gif)
+
 When not using test-time augmentation (TTA), KAPAO is much faster and more accurate than 
-previous single-stage methods like [DEKR](https://github.com/HRNet/DEKR) 
-and [HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation): <br>
+previous single-stage methods like 
+[DEKR](https://github.com/HRNet/DEKR), 
+[HigherHRNet](https://github.com/HRNet/HigherHRNet-Human-Pose-Estimation),
+[HigherHRNet + SWAHR](https://github.com/greatlog/SWAHR-HumanPose), and
+[CenterGroup](https://github.com/dvl-tum/center-group):
 
 ![alt text](./res/accuracy_latency.png)
 
@@ -28,7 +35,15 @@ See script arguments for inference options.
 
 ---
 
-#### Shuffling
+#### Static Image
+
+To generate the four images in the GIF above:
+1. `$ python demos/image.py --bbox`
+2. `$ python demos/image.py --bbox --pose --face --no-kp-dets`
+3. `$ python demos/image.py --bbox --pose --face --no-kp-dets --kp-bbox`
+4. `$ python demos/image.py --pose --face`
+
+#### Shuffling Video
 KAPAO runs fastest on low resolution video with few people in the frame. This demo runs KAPAO-S on a single-person 480p dance video using an input size of 1024. 
 The inference speed is **~9.5 FPS** on our CPU, and **~60 FPS** on our TITAN Xp.
 
@@ -36,24 +51,24 @@ The inference speed is **~9.5 FPS** on our CPU, and **~60 FPS** on our TITAN Xp.
 ![alt text](./res/yBZ0Y2t0ceo_480p_kapao_s_coco_cpu.gif)<br>
 
 To display the results in real-time: <br> 
-`$ python demos/youtube.py --face --display`
+`$ python demos/video.py --face --display`
 
 To create the GIF above:<br>
-`$ python demos/youtube.py --face --device cpu --gif`
+`$ python demos/video.py --face --device cpu --gif`
 
 ---
 
-#### Flash Mob
+#### Flash Mob Video
 This demo runs KAPAO-S on a 720p flash mob video using an input size of 1280.
 
 **GPU inference:**<br>
 ![alt text](./res/2DiQUX11YaY_720p_kapao_s_coco_gpu.gif)<br>
 
 To display the results in real-time: <br> 
-`$ python demos/youtube.py --id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --display`
+`$ python demos/video.py --yt-id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --display`
 
 To create the GIF above:<br>
-`$ python demos/youtube.py --id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --gif`
+`$ python demos/video.py --yt-id 2DiQUX11YaY --tag 136 --imgsz 1280 --color 255 0 255 --start 188 --end 196 --gif`
 
 ---
 
@@ -65,14 +80,14 @@ The plotted poses constitute keypoint objects only.
 ![alt text](./res/nrchfeybHmw_480p_kapao_l_coco_gpu.gif)<br>
 
 To display the results in real-time:<br>
-`$ python demos/youtube.py --id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --display`
+`$ python demos/video.py --yt-id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --display`
 
 To create the GIF above:<br>
-`$ python demos/youtube.py --id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --gif`
+`$ python demos/video.py --yt-id nrchfeybHmw --imgsz 1024 --weights kapao_l_coco.pt --conf-thres-kp 0.01 --kp-obj --face --start 56 --end 72 --gif`
 
 ---
 
-#### Squash
+#### Squash Video
 This demo runs KAPAO-S on a 1080p slow motion squash video. It uses a simple player tracking algorithm based on the frame-to-frame pose differences.
 
 **GPU inference:**<br>
@@ -83,6 +98,18 @@ To display the inference results in real-time: <br>
 
 To create the GIF above:<br>
 `$ python demos/squash.py --start 42 --end 50 --gif --fps`
+
+---
+
+#### Depth Video
+Pose objects generalize well and can even be detected in depth video. 
+Here KAPAO-S was run on a depth video from a [fencing action recognition dataset](https://ieeexplore.ieee.org/abstract/document/8076041?casa_token=Zvm7dLIr1rYAAAAA:KrqtVl3NXrJZn05Eb4KGMio-18VPHc3uyDJZSiNJyI7f7oHQ5V2iwB7bK4mCJCmN83NrRl4P). 
+
+![alt text](./res/2016-01-04_21-33-35_Depth_kapao_s_coco_gpu.gif)<br>
+
+The depth video above can be downloaded directly from [here](https://drive.google.com/file/d/1n4so5WN6snyCYxeUk4xX1glADqQuitXP/view?usp=sharing).
+To create the GIF above:<br>
+`$ python demos/video.py -p 2016-01-04_21-33-35_Depth.avi --face --start 0 --end -1 --gif --gif-size 480 360`
 
 ---
 
@@ -208,7 +235,7 @@ python train.py \
 --img 1280 \
 --batch 72 \
 --epochs 300 \
---data data/coco-kp.yaml \
+--data data/crowdpose.yaml \
 --hyp data/hyps/hyp.kp-p6.yaml \
 --val-scales 1 \
 --val-flips -1 \
@@ -233,4 +260,39 @@ python train.py \
 --name train \
 --workers 128 \
 --noval
+```
+
+## Acknowledgements
+This work was supported in part by Compute Canada, the Canada Research Chairs Program, 
+the Natural Sciences and Engineering Research Council of Canada, 
+a Microsoft Azure Grant, and an NVIDIA Hardware Grant.
+
+If you find this repo is helpful in your research, please cite our paper:
+```
+@article{mcnally2021kapao,
+  title={Rethinking Keypoint Representations: Modeling Keypoints and Poses as Objects for Multi-Person Human Pose Estimation},
+  author={McNally, William and Vats, Kanav and Wong, Alexander and McPhee, John},
+  journal={arXiv preprint arXiv:2111.08557},
+  year={2021}
+}
+```
+Please also consider citing our previous works:
+```
+@inproceedings{mcnally2021deepdarts,
+  title={DeepDarts: Modeling Keypoints as Objects for Automatic Scorekeeping in Darts using a Single Camera},
+  author={McNally, William and Walters, Pascale and Vats, Kanav and Wong, Alexander and McPhee, John},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={4547--4556},
+  year={2021}
+}
+
+@article{mcnally2021evopose2d,
+  title={EvoPose2D: Pushing the Boundaries of 2D Human Pose Estimation Using Accelerated Neuroevolution With Weight Transfer},
+  author={McNally, William and Vats, Kanav and Wong, Alexander and McPhee, John},
+  journal={IEEE Access},
+  volume={9},
+  pages={139403--139414},
+  year={2021},
+  publisher={IEEE}
+}
 ```

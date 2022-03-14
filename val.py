@@ -4,13 +4,12 @@ import os, os.path as osp
 import sys
 from pathlib import Path
 
-import numpy as np
-import torch
-from tqdm import tqdm
-
 FILE = Path(__file__).absolute()
 sys.path.append(FILE.parents[0].as_posix())  # add kapao/ to path
 
+import numpy as np
+import torch
+from tqdm import tqdm
 from models.experimental import attempt_load
 from utils.datasets import create_dataloader
 from utils.augmentations import letterbox
@@ -19,6 +18,7 @@ from utils.general import check_dataset, check_file, check_img_size, \
 from utils.torch_utils import select_device, time_sync
 import tempfile
 import cv2
+import pickle
 
 PAD_COLOR = (114 / 255, 114 / 255, 114 / 255)
 
@@ -152,7 +152,9 @@ def run(data,
         compute_loss=None,
         count_fused=False,
         two_stage=False,
-        pad=0
+        pad=0,
+        save_oks=False,
+        json_name=''
         ):
 
     if two_stage:  # EXPERIMENTAL
@@ -191,7 +193,7 @@ def run(data,
     data['flips'] = flips
     data['count_fused'] = count_fused
 
-    is_coco = 'coco' in data['path']
+    is_coco = 'crowdpose' not in data['path']
     if is_coco:
         from pycocotools.coco import COCO
         from pycocotools.cocoeval import COCOeval
@@ -264,11 +266,15 @@ def run(data,
 
     if not training:  # save json
         save_dir, weights_name = osp.split(weights)
-        json_name = '{}_{}_c{}_i{}_ck{}_ik{}_ckp{}_t{}.json'.format(
-            task, osp.splitext(weights_name)[0],
-            conf_thres, iou_thres, conf_thres_kp, iou_thres_kp,
-            conf_thres_kp_person, overwrite_tol
-        )
+        if not json_name:
+            json_name = '{}_{}_c{}_i{}_ck{}_ik{}_ckp{}_t{}.json'.format(
+                task, osp.splitext(weights_name)[0],
+                conf_thres, iou_thres, conf_thres_kp, iou_thres_kp,
+                conf_thres_kp_person, overwrite_tol
+            )
+        else:
+            if not json_name.endswith('.json'):
+                json_name += '.json'
         json_path = osp.join(save_dir, json_name)
     else:
         tmp = tempfile.NamedTemporaryFile(mode='w+b')
@@ -282,10 +288,16 @@ def run(data,
         coco = COCO(annot)
         result = coco.loadRes(json_path)
         eval = COCOeval(coco, result, iouType='keypoints')
+        if 'oks_sigmas' in data:
+            eval.params.kpt_oks_sigmas = data['oks_sigmas']
         eval.evaluate()
         eval.accumulate()
         eval.summarize()
         mAP, map50 = eval.stats[:2]
+        if save_oks:
+            oks_path = osp.splitext(json_path)[0] + '_oks.pkl'
+            with open(oks_path, 'wb') as f:
+                pickle.dump(eval.ious, f)
 
     if training:
         tmp.close()
@@ -324,6 +336,8 @@ def parse_opt():
     parser.add_argument('--count-fused', action='store_true', help='count the number of fused keypoint objects')
     parser.add_argument('--two-stage', action='store_true', help='use two-stage inference (experimental)')
     parser.add_argument('--pad', type=int, default=0, help='padding for two-stage inference')
+    parser.add_argument('--json-name', type=str, default='', help='optional name for saved json file')
+    parser.add_argument('--save-oks', action='store_true', help='save oks scores for all detections (pickle)')
     opt = parser.parse_args()
     opt.flips = [None if f == -1 else f for f in opt.flips]
     opt.data = check_file(opt.data)  # check file
