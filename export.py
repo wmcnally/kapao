@@ -16,7 +16,7 @@ import torch.nn as nn
 from torch.utils.mobile_optimizer import optimize_for_mobile
 
 FILE = Path(__file__).absolute()
-sys.path.append(FILE.parents[0].as_posix())  # add yolov5/ to path
+sys.path.append(FILE.parents[0].as_posix())
 
 from models.common import Conv
 from models.yolo import Detect
@@ -54,8 +54,8 @@ def export_onnx(model, img, file, opset, train, dynamic, simplify):
                           do_constant_folding=not train,
                           input_names=['images'],
                           output_names=['output'],
-                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},  # shape(1,3,640,640)
-                                        'output': {0: 'batch', 1: 'anchors'}  # shape(1,25200,85)
+                          dynamic_axes={'images': {0: 'batch', 2: 'height', 3: 'width'},
+                                        'output': {0: 'batch', 1: 'anchors'} 
                                         } if dynamic else None)
 
         # Checks
@@ -101,13 +101,13 @@ def export_coreml(model, img, file):
         print(f'\n{prefix} export failure: {e}')
 
 
-def run(weights='./yolov5s.pt',  # weights path
+def run(weights='./kapao_l_coco.pt',  # weights path
         img_size=(1280, 1280),  # image (height, width)
         batch_size=1,  # batch size
         device='cpu',  # cuda device, i.e. 0 or 0,1,2,3 or cpu
         include=('torchscript', 'onnx', 'coreml'),  # include formats
         half=False,  # FP16 half-precision export
-        inplace=False,  # set YOLOv5 Detect() inplace=True
+        inplace=False,  # set Detect()
         train=False,  # model.train() mode
         optimize=False,  # TorchScript: optimize for mobile
         dynamic=False,  # ONNX: dynamic axes
@@ -128,7 +128,7 @@ def run(weights='./yolov5s.pt',  # weights path
     # Input
     gs = int(max(model.stride))  # grid size (max stride)
     img_size = [check_img_size(x, gs) for x in img_size]  # verify img_size are gs-multiples
-    img = torch.zeros(batch_size, 3, *img_size).to(device)  # image size(1,3,320,192) iDetection
+    img = torch.zeros(batch_size, 3, *img_size).to(device)
 
     # Update model
     if half:
@@ -165,13 +165,13 @@ def run(weights='./yolov5s.pt',  # weights path
 
 def parse_opt():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--weights', type=str, default='./yolov5s.pt', help='weights path')
+    parser.add_argument('--weights', type=str, default='./kapao_l_coco.pt', help='weights path')
     parser.add_argument('--img-size', nargs='+', type=int, default=[1280, 1280], help='image (height, width)')
     parser.add_argument('--batch-size', type=int, default=1, help='batch size')
     parser.add_argument('--device', default='cpu', help='cuda device, i.e. 0 or 0,1,2,3 or cpu')
     parser.add_argument('--include', nargs='+', default=['torchscript', 'onnx', 'coreml'], help='include formats')
     parser.add_argument('--half', action='store_true', help='FP16 half-precision export')
-    parser.add_argument('--inplace', action='store_true', help='set YOLOv5 Detect() inplace=True')
+    parser.add_argument('--inplace', action='store_true', help='set Detect()')
     parser.add_argument('--train', action='store_true', help='model.train() mode')
     parser.add_argument('--optimize', action='store_true', help='TorchScript: optimize for mobile')
     parser.add_argument('--dynamic', action='store_true', help='ONNX: dynamic axes')
