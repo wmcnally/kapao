@@ -1,5 +1,7 @@
 # KAPAO (Keypoints and Poses as Objects)
 
+[Accepted to ECCV 2022](https://arxiv.org/abs/2111.08557)
+
 KAPAO is an efficient single-stage multi-person human pose estimation method that models 
 **k**eypoints **a**nd **p**oses **a**s **o**bjects within a dense anchor-based detection framework.
 KAPAO simultaneously detects _pose objects_ and _keypoint objects_ and fuses the detections to predict human poses:
