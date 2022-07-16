@@ -261,3 +261,38 @@ python train.py \
 --workers 128 \
 --noval
 ```
+
+## Acknowledgements
+This work was supported in part by Compute Canada, the Canada Research Chairs Program, 
+the Natural Sciences and Engineering Research Council of Canada, 
+a Microsoft Azure Grant, and an NVIDIA Hardware Grant.
+
+If you find this repo is helpful in your research, please cite our paper:
+```
+@article{mcnally2021kapao,
+  title={Rethinking Keypoint Representations: Modeling Keypoints and Poses as Objects for Multi-Person Human Pose Estimation},
+  author={McNally, William and Vats, Kanav and Wong, Alexander and McPhee, John},
+  journal={arXiv preprint arXiv:2111.08557},
+  year={2021}
+}
+```
+Please also consider citing our previous works:
+```
+@inproceedings{mcnally2021deepdarts,
+  title={DeepDarts: Modeling Keypoints as Objects for Automatic Scorekeeping in Darts using a Single Camera},
+  author={McNally, William and Walters, Pascale and Vats, Kanav and Wong, Alexander and McPhee, John},
+  booktitle={Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
+  pages={4547--4556},
+  year={2021}
+}
+
+@article{mcnally2021evopose2d,
+  title={EvoPose2D: Pushing the Boundaries of 2D Human Pose Estimation Using Accelerated Neuroevolution With Weight Transfer},
+  author={McNally, William and Vats, Kanav and Wong, Alexander and McPhee, John},
+  journal={IEEE Access},
+  volume={9},
+  pages={139403--139414},
+  year={2021},
+  publisher={IEEE}
+}
+```
