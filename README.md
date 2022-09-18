@@ -59,9 +59,9 @@ To create the GIF above:<br>
 `$ python demos/video.py --face --device cpu --gif`
 
 **CPU specs:**
-Intel Core i7-8700K
-16GB DDR4 3000MHz
-Samsung 970 Pro M.2 NVMe SSD
+Intel Core i7-8700K<br>
+16GB DDR4 3000MHz<br>
+Samsung 970 Pro M.2 NVMe SSD<br>
 
 ---
 
