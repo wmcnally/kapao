@@ -58,6 +58,11 @@ To display the results in real-time: <br>
 To create the GIF above:<br>
 `$ python demos/video.py --face --device cpu --gif`
 
+**CPU specs:**
+Intel Core i7-8700K
+16GB DDR4 3000MHz
+Samsung 970 Pro M.2 NVMe SSD
+
 ---
 
 #### Flash Mob Video
