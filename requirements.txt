@@ -3,8 +3,8 @@
 # base ----------------------------------------
 matplotlib>=3.2.2
 numpy>=1.18.5
-opencv-python>=4.1.2
-Pillow>=8.0.0
+opencv-python==4.5.5.64
+pillow
 PyYAML>=5.3.1
 scipy>=1.4.1
 torch==1.9.1
@@ -31,6 +31,3 @@ Cython  # for pycocotools https://github.com/cocodataset/cocoapi/issues/172
 pycocotools>=2.0.2  # COCO mAP
 # albumentations>=1.0.3
 thop  # FLOPs computation
-
-# inference demos
-git+https://github.com/baxterisme/pytube  # patched pytube
