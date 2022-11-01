@@ -1,5 +1,32 @@
 # KAPAO (Keypoints and Poses as Objects)
 
+
+## Download weights
+```
+mkdir weights && cd weights
+python3 ../data/scripts/download_models.py 
+```
+
+## Build container
+```
+docker build -t $(whoami)/kapao .
+```
+
+## Run container
+```
+docker run \
+--rm -it \
+--gpus all \
+--mount type=bind,source="$PWD",target=/app \
+--mount type=bind,source="/home",target=/home \
+--mount type=bind,source="/media",target=/media \
+--privileged \
+$(whoami)/kapao
+````
+
+
+
+
 KAPAO is an efficient single-stage multi-person human pose estimation method that models 
 **k**eypoints **a**nd **p**oses **a**s **o**bjects within a dense anchor-based detection framework.
 KAPAO simultaneously detects _pose objects_ and _keypoint objects_ and fuses the detections to predict human poses:
